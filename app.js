@@ -735,7 +735,7 @@ async function postToSheet(payload) {
   const json = await res.json();
   if (json.result !== "success") {
     const err = new Error(json.message || "저장 실패");
-    err.locked = !!json.locked;
+    err.locked = !!json.locked || !!json.needLogin; // 백엔드 문구(잠금·로그인 필요)는 그대로 보여 준다
     throw err;
   }
   return json;
