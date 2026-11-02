@@ -127,7 +127,7 @@ function renderHome() {
   const tm = teamOf(S.team);
   if (tm) {
     box.innerHTML = '<div class="team-badge" data-team="' + esc(tm.id) + '"><span class="tb-emoji">' + tm.emoji + '</span><div><div class="tb-name">' + esc(tm.id) + '</div><div class="tb-sub">' + esc(tm.dir) + ' · ' + esc(tm.trait) + '</div></div></div>' +
-      '<div class="team-actions"><button type="button" class="btn ghost small" id="teamChange">선생님이 다른 팀을 정해 줬으면 바꾸기</button></div><div id="teamPick" hidden></div>';
+      '<div class="team-actions"><button type="button" class="btn ghost small" id="teamChange">팀 바꾸기 (선생님이 정해 줬을 때)</button></div><div id="teamPick" hidden></div>';
     $("teamChange").addEventListener("click", () => { const p = $("teamPick"); p.hidden = !p.hidden; if (!p.hidden) renderTeamPick(p); });
   } else {
     box.innerHTML = '<p>짧은 성향 테스트 4문항으로 팀이 정해져. 팀은 사신도의 네 신(청룡·백호·주작·현무, 교과서 40~41쪽)이고, 다음 수업들에서도 같은 팀이야.</p>' +
@@ -667,12 +667,12 @@ function renderVault() {
     h.push('<p class="result-line good" style="color:#8cff9a">🔓 번호가 맞았다! 마지막 자물쇠 하나.</p><p>' + esc(VAULT.final.q) + ' <span class="muted">(' + esc(VAULT.final.page) + ')</span></p>');
     h.push('<ol class="order-list">' + st.arr.map((it, i) => '<li class="order-item"><span class="o-no">' + (i + 1) + '</span><span class="o-txt">' + esc(it) + '</span><button type="button" class="o-btn" data-up="' + i + '" aria-label="위로">▲</button><button type="button" class="o-btn" data-down="' + i + '" aria-label="아래로">▼</button></li>').join("") + '</ol>');
     h.push('<button type="button" class="btn primary" id="finalBtn">자물쇠 열기</button><p class="err" id="vErr"></p>');
-    h.push('<button type="button" class="btn ghost small" id="hintBtn" style="color:#fff">💡 힌트 보기 (+1분)</button><p class="hint-box" id="puzHint"' + (st.hint ? "" : " hidden") + '>' + esc(VAULT.final.hint) + '</p>');
+    h.push('<button type="button" class="btn ghost small" id="vHintBtn" style="color:#fff">💡 힌트 보기 (+1분)</button><p class="hint-box" id="vHint"' + (st.hint ? "" : " hidden") + '>' + esc(VAULT.final.hint) + '</p>');
   }
-  h.push('<p style="margin-top:.8rem"><button type="button" class="btn" id="backRooms">← 평면도</button></p>');
+  h.push('<p style="margin-top:.8rem"><button type="button" class="btn" id="vBack">← 평면도</button></p>');
   const card = $("vaultCard");
   card.innerHTML = h.join("");
-  $("backRooms").addEventListener("click", () => { renderRooms(); show("scrRooms"); });
+  $("vBack").addEventListener("click", () => { renderRooms(); show("scrRooms"); });
   const cb = $("codeBtn");
   if (cb) {
     cb.addEventListener("click", () => {
@@ -691,7 +691,7 @@ function renderVault() {
       if (res.correct || skip()) { S.esc.escapedAt = Date.now(); save(); if (timerHandle) clearInterval(timerHandle); renderEscaped(); show("scrEscaped"); }
       else { $("vErr").textContent = res.ok + "/" + res.total + " 자리가 맞아."; card.classList.add("shake"); setTimeout(() => card.classList.remove("shake"), 400); save(); }
     });
-    $("hintBtn").addEventListener("click", () => { if (!st.hint) { st.hint = true; S.esc.hints++; save(); } $("puzHint").hidden = false; renderTop(); });
+    $("vHintBtn").addEventListener("click", () => { if (!st.hint) { st.hint = true; S.esc.hints++; save(); } $("vHint").hidden = false; renderTop(); });
   }
   renderTop();
 }
