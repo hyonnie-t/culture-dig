@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "C:/Users/USER/OneDrive - 대영중학교/교사업무/웹앱/culture-dig/style.css"
+        ],
+        "createdAt": "2026-11-02T16:02:18.319Z",
+        "reason": "brief 2026-11-03 asks for brass placard/wood museum styling; left accent bars on clue/hint/placard are the brass-plate motif, chosen by Claude per 효니's brief"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "C:/Users/USER/OneDrive - 대영중학교/교사업무/웹앱/culture-dig/index.html"
+        ],
+        "createdAt": "2026-11-02T16:02:18.715Z",
+        "reason": "same brass-plate motif (first-line placard), per 2026-11-03 brief"
+      }
+    ]
+  }
+}

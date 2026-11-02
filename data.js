@@ -11,20 +11,58 @@ const ERAS = {
   joseon: { name: "조선 전기", short: "조선 전기", color: "era-joseon" }
 };
 
-/* 기숙사 4개 — 1차시 앞 10분에 배정. 이름은 발굴 주제에서 땄다. */
-const HOUSES = [
-  { id: "cheongja", name: "청자단", emoji: "🏺", desc: "고려의 푸른 빛" },
-  { id: "hwalja", name: "활자단", emoji: "📜", desc: "쇠로 찍은 글자" },
-  { id: "angbu", name: "앙부단", emoji: "☀️", desc: "해그림자로 읽는 시간" },
-  { id: "sagunja", name: "사군자단", emoji: "🎋", desc: "선비의 네 벗" }
+/* 팀 4개 — 사신도(교과서 40~41쪽 고구려 고분 벽화의 네 방위 신). ⓒ survive-eras·ⓑ 수능 던전과 같은 이름이라 9차시 내내 한 팀.
+ * 1차시 앞에서 «발굴단 성향 테스트»(QUIZ) 4문항으로 자동 배정한다. id가 그대로 시트 조번호(groupId)와 choicesJson.house에 들어간다. */
+const TEAMS = [
+  { id: "청룡", emoji: "🐉", dir: "동쪽을 지키는 용", trait: "한번 잡으면 끝까지 캐는 끈기" },
+  { id: "백호", emoji: "🐯", dir: "서쪽을 지키는 호랑이", trait: "빠르게 정하고 바로 움직이는 힘" },
+  { id: "주작", emoji: "🔥", dir: "남쪽을 지키는 새", trait: "모둠을 끌어 모으고 분위기를 띄우는 열정" },
+  { id: "현무", emoji: "🐢", dir: "북쪽을 지키는 거북", trait: "꼼꼼히 살피고 단서를 모으는 신중함" }
 ];
 
-/* 지층: 아래(먼저 파는 층)부터 위로. 공통 모드는 goryeo·joseon, 유연(flex) 모드는 samguk을 맨 아래에 더한다. */
-const LAYERS = [
-  { id: "samguk", title: "삼국·남북국 층", sub: "1학기 복습 · 36~43, 64~71쪽", flexOnly: true },
-  { id: "goryeo", title: "고려 층", sub: "100~109쪽" },
-  { id: "joseon", title: "조선 전기 층", sub: "128~133쪽" }
+/* 발굴단 성향 테스트 — 4문항, 보기 4개가 팀 하나씩(t). 최다 득표 팀, 동점이면 학번 번호로 가른다(logic.assignTeam).
+ * 점수나 정답이 없는 성향 질문이라 틀릴 수 없다. 보기 순서는 문항마다 다르게 섞어 두어 «①은 늘 청룡»이 되지 않게 했다. */
+const QUIZ = [
+  { q: "발굴 현장에 도착했다. 삽을 들고 제일 먼저 하는 일은?",
+    options: [
+      { t: "백호", text: "제일 큰 흙더미부터 바로 판다." },
+      { t: "현무", text: "지층 단면을 한참 들여다보며 어디를 팔지 고른다." },
+      { t: "주작", text: "같이 온 친구들한테 «여기 같이 파자!» 하고 부른다." },
+      { t: "청룡", text: "한 자리를 정해 끝이 보일 때까지 판다." }
+    ] },
+  { q: "흙 속에서 이상한 조각이 나왔다. 너는?",
+    options: [
+      { t: "현무", text: "조각을 붓으로 털어 가며 무늬를 자세히 본다." },
+      { t: "청룡", text: "주변을 더 파서 나머지 조각을 다 찾는다." },
+      { t: "백호", text: "«이건 청자다!» 하고 바로 이름을 붙인다." },
+      { t: "주작", text: "모두를 불러 «이거 봐!» 하고 보여 준다." }
+    ] },
+  { q: "박물관에 갇혔다. 문을 열 퍼즐이 4개나 된다. 모둠에서 너의 역할은?",
+    options: [
+      { t: "주작", text: "«우리 할 수 있어!» 하며 역할을 나눠 준다." },
+      { t: "백호", text: "제일 쉬워 보이는 것부터 혼자 후딱 푼다." },
+      { t: "청룡", text: "어려운 퍼즐 하나를 맡아 끝까지 붙든다." },
+      { t: "현무", text: "교과서를 펴고 쪽수부터 찾는다." }
+    ] },
+  { q: "친구가 «이 유물은 조선 거야»라고 했는데, 너는 고려 것 같다. 어떻게 할래?",
+    options: [
+      { t: "청룡", text: "근거를 찾을 때까지 내 생각을 밀고 간다." },
+      { t: "주작", text: "둘 다 맞을 수 있다며 다른 친구들 의견도 모아 본다." },
+      { t: "현무", text: "교과서에서 그 유물 쪽을 찾아 확인한 뒤 말한다." },
+      { t: "백호", text: "«일단 넣어 보고 틀리면 바꾸자»고 한다." }
+    ] }
 ];
+
+/* 지층: 배열은 아래(가장 오래된 층)부터 위로. 공통 모드는 goryeo·joseon, 유연(flex) 모드는 samguk을 맨 아래에 더한다.
+ * block: 그 층 블록의 색(마인크래프트식 — 조선 전기=흙, 고려=돌, 삼국·남북국=깊은 돌). 층마다 블록 10개(5×2) 중 7개에 유물, 3개는 돌멩이뿐. */
+const LAYERS = [
+  { id: "samguk", title: "삼국·남북국 층", sub: "1학기 복습 · 36~43, 64~71쪽", flexOnly: true, block: "deep", blockName: "깊은 돌" },
+  { id: "goryeo", title: "고려 층", sub: "100~109쪽", block: "stone", blockName: "돌" },
+  { id: "joseon", title: "조선 전기 층", sub: "128~133쪽", block: "dirt", blockName: "흙" }
+];
+const BLOCKS_PER_LAYER = 10; // 5×2
+/* 층 순서: "bottom-up"(아래 층부터, 지금 규칙) / "top-down"(표토부터 파 내려가기). 효니 결정 전까지 bottom-up. */
+const DIG_ORDER = "bottom-up";
 
 /* 유물 카드
  * clue: 이름 없이 주는 발굴 단서 / page: 교과서 쪽수 / distractors: 이름 맞히기 오답 보기(2지선다는 앞 1개, 4지선다는 3개)
@@ -36,6 +74,7 @@ const ARTIFACTS = [
   /* ───────── 고려 층 ───────── */
   {
     id: "g1", layer: "goryeo", emoji: "🏺", name: "청자 상감 운학문 매병", page: "107쪽",
+    photo: { src: "img/g1.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형", note: "국립중앙박물관 소장품(뚜껑 있는 매병)" },
     clue: "푸른빛 바탕에 구름과 학 무늬를 흑백으로 파 넣은 병. 13세기 작품으로, 간송 미술관에 있다.",
     distractors: ["청자 참외 모양 병", "분청사기 상감 연꽃 넝쿨 무늬 병", "백자 달항아리"],
     bg: {
@@ -53,6 +92,7 @@ const ARTIFACTS = [
   },
   {
     id: "g2", layer: "goryeo", emoji: "🪵", name: "팔만대장경판", page: "108쪽",
+    photo: { src: "img/g2.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형", note: "장경판전 안의 경판" },
     clue: "8만여 장의 나무판에 5천만 자가 넘는 글자를 일정한 서체로 새겼다. 합천 해인사에 보관되어 있다.",
     distractors: ["초조대장경 목판", "무구정광대다라니경", "『직지』"],
     bg: {
@@ -70,6 +110,7 @@ const ARTIFACTS = [
   },
   {
     id: "g3", layer: "goryeo", emoji: "📖", name: "『직지』", page: "108~109쪽",
+    photo: { src: "img/g3.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형", note: "조선 시대 판본 표지(1377년 원본은 프랑스에)" },
     clue: "1377년 청주 흥덕사에서 쇠를 부어 만든 글자로 찍은 책. 지금은 프랑스 국립 도서관에 있다.",
     distractors: ["『상정고금예문』", "『삼국유사』", "『삼강행실도』"],
     bg: {
@@ -87,6 +128,7 @@ const ARTIFACTS = [
   },
   {
     id: "g4", layer: "goryeo", emoji: "🏯", name: "영주 부석사 무량수전", page: "106쪽",
+    photo: { src: "img/g4.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형" },
     clue: "가운데가 볼록한 배흘림기둥에, 기둥 위에만 공포를 둔 건물. 신라 때 처음 세웠으나 고려 때 고쳐 지었다.",
     distractors: ["안동 봉정사 극락전", "황주 성불사 응진전", "예산 수덕사 대웅전"],
     bg: {
@@ -99,6 +141,7 @@ const ARTIFACTS = [
   },
   {
     id: "g5", layer: "goryeo", emoji: "🗿", name: "논산 관촉사 석조 미륵보살 입상", page: "100·106쪽",
+    photo: { src: "img/g5.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형" },
     clue: "높이 약 18m, 우리나라에서 제일 큰 불상. 지방에서 만든 대규모 석조 불상이다.",
     distractors: ["안동 이천동 마애 여래 입상", "하남 하사창동 철조 석가여래 좌상", "영주 부석사 소조아미타여래 좌상"],
     bg: {
@@ -116,6 +159,7 @@ const ARTIFACTS = [
   },
   {
     id: "g6", layer: "goryeo", emoji: "🫗", name: "청동 은입사 물가 풍경 무늬 정병", page: "107쪽",
+    photo: { src: "img/g6.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형" },
     clue: "청동 바탕에 가는 은실을 박아 버드나무와 갈대, 날아다니는 새가 있는 물가 풍경을 그린 병.",
     distractors: ["나전 칠기 경함", "청자 참외 모양 병", "백제 금동 대향로"],
     bg: {
@@ -133,6 +177,7 @@ const ARTIFACTS = [
   },
   {
     id: "gx", layer: "goryeo", intruder: true, trueEra: "joseon", emoji: "📕", name: "『삼강행실도』", page: "132쪽",
+    photo: { src: "img/gx.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형", note: "펼친 면" },
     clue: "임금과 신하, 부모와 자식, 남편과 부인 사이의 도리를 잘 지킨 사례를 그림과 글로 엮은 책.",
     note: "세종 때 편찬. 백성이 유교 윤리를 쉽게 익히게 하려고 그림을 곁들였다. 이 층(고려)에 흘러든 조선 전기 유물."
   },
@@ -140,6 +185,7 @@ const ARTIFACTS = [
   /* ───────── 조선 전기 층 ───────── */
   {
     id: "j1", layer: "joseon", emoji: "📘", name: "『훈민정음』 해례본", page: "129쪽",
+    photo: { src: "img/j1.jpg", credit: "국립한글박물관", source: "e뮤지엄", license: "공공누리 제1유형", note: "석인본" },
     clue: "28자 소리글자의 창제 원리를 적은 책. 1997년 유네스코 세계 기록 유산이 되었다.",
     distractors: ["『동국통감』", "『용비어천가』", "『조선왕조실록』"],
     bg: {
@@ -157,6 +203,7 @@ const ARTIFACTS = [
   },
   {
     id: "j2", layer: "joseon", emoji: "☀️", name: "앙부일구", page: "128·130쪽",
+    photo: { src: "img/j2.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형", note: "국립고궁박물관 소장" },
     clue: "해의 그림자로 시간을 보는 솥 모양의 해시계. 1434년에 만들었다.",
     distractors: ["혼천의", "자격루", "간의"],
     bg: {
@@ -191,6 +238,7 @@ const ARTIFACTS = [
   },
   {
     id: "j4", layer: "joseon", emoji: "🍶", name: "분청사기 상감 연꽃 넝쿨 무늬 병", page: "133쪽",
+    photo: { src: "img/j4.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형" },
     clue: "청자 제작 기법에 새로운 기법을 응용해 만든 자기. 연꽃 넝쿨 무늬를 상감으로 넣은 병으로, 국립 중앙 박물관에 있다.",
     distractors: ["청자 상감 운학문 매병", "백자 달항아리", "청자 참외 모양 병"],
     bg: {
@@ -220,6 +268,7 @@ const ARTIFACTS = [
   },
   {
     id: "j6", layer: "joseon", emoji: "🌾", name: "『농사직설』", page: "129~130쪽",
+    photo: { src: "img/j6.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형", note: "표지" },
     clue: "우리나라의 실정에 맞는 농법을 소개한 책. 1429년에 펴냈다.",
     distractors: ["『향약집성방』", "『경국대전』", "『국조오례의』"],
     bg: {
@@ -237,6 +286,7 @@ const ARTIFACTS = [
   },
   {
     id: "jx", layer: "joseon", intruder: true, trueEra: "goryeo", emoji: "🗼", name: "개성 경천사지 10층 석탑", page: "106쪽",
+    photo: { src: "img/jx.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형" },
     clue: "원의 영향을 받아 1348년에 세운 10층 석탑. 지금은 국립 중앙 박물관에 있다.",
     note: "고려 후기, 원의 영향을 받은 석탑. 이 층(조선 전기)에 흘러든 고려 유물."
   },
@@ -244,6 +294,7 @@ const ARTIFACTS = [
   /* ───────── 삼국·남북국 층 (유연 모듈) ───────── */
   {
     id: "s1", layer: "samguk", emoji: "🔥", name: "백제 금동 대향로", page: "36·38쪽",
+    photo: { src: "img/s1.jpg", credit: "국립부여박물관", source: "e뮤지엄", license: "공공누리 제1유형" },
     clue: "봉황·산천·용과 연꽃을 함께 새긴 향로. 악기를 연주하는 사람도 보인다. 국립 부여 박물관에 있다.",
     distractors: ["성덕 대왕 신종", "황남 대총 북분 금관", "청동 은입사 정병"],
     bg: {
@@ -256,6 +307,7 @@ const ARTIFACTS = [
   },
   {
     id: "s2", layer: "samguk", emoji: "🔭", name: "경주 첨성대", page: "38쪽",
+    photo: { src: "img/s2.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형" },
     clue: "7세기 신라에서 세운 건축물로, 천문 관측기구로 추정한다.",
     distractors: ["황룡사 9층 목탑", "경주 분황사 모전 석탑", "경주 불국사 다보탑"],
     bg: {
@@ -273,6 +325,7 @@ const ARTIFACTS = [
   },
   {
     id: "s3", layer: "samguk", emoji: "🪷", name: "금동 연가 7년명 여래 입상", page: "37쪽",
+    photo: { src: "img/s3.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형" },
     clue: "'연가'라는 연호가 새겨진 고구려 불상. 중국 북위의 불상 양식과 비슷하다.",
     distractors: ["서산 용현리 마애 여래 삼존상", "경주 배동 석조 여래 삼존 입상", "석굴암 본존상"],
     bg: {
@@ -290,6 +343,7 @@ const ARTIFACTS = [
   },
   {
     id: "s4", layer: "samguk", emoji: "🎨", name: "무용총 벽화", page: "41쪽",
+    photo: { src: "img/s4.jpg", credit: "국립중앙박물관", source: "e뮤지엄", license: "공공누리 제1유형", note: "모사도(원본 벽화는 중국 지안)" },
     clue: "손님을 접대하는 모습이 그려진 고구려 고분 벽화. 남성들은 폭이 넓고 무늬가 있는 바지를 입었다.",
     distractors: ["안악 3호분 벽화", "강서대묘 사신도", "수산리 고분 벽화"],
     bg: {
@@ -307,6 +361,7 @@ const ARTIFACTS = [
   },
   {
     id: "s5", layer: "samguk", emoji: "🪨", name: "석굴암 본존상", page: "66~67쪽",
+    photo: { src: "img/s5.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형", note: "흑백 사진(故 한석홍 기증)" },
     clue: "화강암 돔 천장 아래 앉은 불상. 얼굴:가슴:어깨:무릎 너비의 비례가 1:2:3:4이다.",
     distractors: ["경주 배동 석조 여래 삼존 입상", "영주 부석사 소조아미타여래 좌상", "논산 관촉사 석조 미륵보살 입상"],
     bg: {
@@ -319,6 +374,7 @@ const ARTIFACTS = [
   },
   {
     id: "s6", layer: "samguk", emoji: "🔔", name: "성덕 대왕 신종", page: "66쪽",
+    photo: { src: "img/s6.jpg", credit: "국가유산청", source: "국가유산포털", license: "공공누리 제1유형" },
     clue: "우리나라에서 가장 큰 범종. 표면에 비천상을 새겼고 맨 위에 음통이 있다.",
     distractors: ["상원사 동종", "백제 산수무늬 벽돌", "황남 대총 북분 금관"],
     bg: {
@@ -336,6 +392,7 @@ const ARTIFACTS = [
   },
   {
     id: "sx", layer: "samguk", intruder: true, trueEra: "goryeo", emoji: "📚", name: "『삼국사기』", page: "105쪽",
+    photo: { src: "img/sx.jpg", credit: "충청남도역사문화연구원", source: "e뮤지엄", license: "공공누리 제1유형", note: "조선 판본 표지" },
     clue: "지금까지 전하는 가장 오래된 역사서. 유교의 합리주의 사관에 따라 삼국의 역사를 썼다.",
     note: "고려 김부식이 편찬. 삼국의 역사서(『신집』·『서기』·『국사』)는 전하지 않는다. 이 층(삼국·남북국)에 흘러든 고려 유물."
   }
@@ -530,6 +587,44 @@ const VAULT = {
   }
 };
 
+/* 유물 사진이 없을 때 쓰는 도트 아이콘(12×12). 글자 하나 = 한 칸, "."은 빈칸. 색은 PIXEL_PALETTE. app.js의 pixelSvg()가 SVG로 그린다.
+ * 사진(photo)이 확인된 유물은 사진을 쓰고, 확인 못 한 유물만 이 아이콘을 쓴다. */
+const PIXEL_PALETTE = { a: "#3f8f7f", b: "#2c6a5e", c: "#e6f1ec", d: "#8a5a35", e: "#5a3a22", f: "#d9c9a6", g: "#8a8a8f", h: "#5e5e62", i: "#c9962b", j: "#8f6a18", k: "#b9552e", l: "#f3eee4", m: "#2a1f16", n: "#7a5a9c", o: "#5f9e3a" };
+const PIXEL_ICONS = {
+  vase: [ // 매병·정병·분청 병
+    "....bbbb....", "....caac....", ".....aa.....", "...baaaab...", "..baaaaaab..", ".baacaaaaab.", ".baaacaaaab.", ".baaaacaaab.", ".baaaaaaaab.", "..baaaaaab..", "...bbbbbb...", "...bbbbbb..."],
+  book: [ // 책
+    "............", ".mmmmmmmmmm.", ".mllllllllm.", ".mlmmmmmllm.", ".mllllllllm.", ".mlmmmmmllm.", ".mllllllllm.", ".mlmmmmlllm.", ".mllllllllm.", ".mllllllllm.", ".mmmmmmmmmm.", "............"],
+  plank: [ // 경판
+    "............", "............", "eeeeeeeeeeee", "edddddddddde", "edmdmdmdmdde", "edddddddddde", "edmdmdmdmdde", "edddddddddde", "eeeeeeeeeeee", "............", "............", "............"],
+  hall: [ // 무량수전(기와집)
+    ".....mm.....", "...mmmmmm...", ".mmmmmmmmmm.", "mmmmmmmmmmmm", "..ffffffff..", "..fkffkfkf..", "..fkffkfkf..", "..fkffkfkf..", "..fkffkfkf..", "..ffffffff..", ".gggggggggg.", "gggggggggggg"],
+  buddha: [ // 서 있는 불상
+    ".....gg.....", "....gggg....", "....ghhg....", ".....gg.....", "...gggggg...", "..gggggggg..", "..gggggggg..", "...gggggg...", "...gggggg...", "...gggggg...", "..hhhhhhhh..", ".hhhhhhhhhh."],
+  seated: [ // 앉은 불상
+    ".....gg.....", "....gggg....", "....ghhg....", ".....gg.....", "...gggggg...", "..gggggggg..", "..gggggggg..", "..gggggggg..", ".gggggggggg.", "hhhhhhhhhhhh", "..hhhhhhhh..", "............"],
+  pagoda: [ // 석탑
+    ".....gg.....", "....gggg....", "...hhhhhh...", "....gggg....", "..hhhhhhhh..", "....gggg....", ".hhhhhhhhhh.", "....gggg....", "hhhhhhhhhhhh", "...gggggg...", "..hhhhhhhh..", "hhhhhhhhhhhh"],
+  sundial: [ // 앙부일구
+    "............", "......m.....", ".....mm.....", "....mm......", "..jjjjjjjj..", ".jiiiiiiiij.", ".jiimiimiij.", ".jiiiiiiiij.", "..jiiiiiij..", "...jjjjjj...", "....j..j....", "...jj..jj..."],
+  painting: [ // 그림(두루마리)
+    "jjjjjjjjjjjj", ".llllllllll.", ".lloooollll.", ".looooooll..", ".lllgggglll.", ".llgggggglll", ".lggggggggl.", ".lllllllll..", ".llkkkkllll.", ".llllllllll.", "jjjjjjjjjjjj", "............"],
+  burner: [ // 향로
+    ".....ii.....", "....iiii....", "...ijjjji...", "..ijjjjjji..", "..ijjjjjji..", "...iiiiii...", "..iiiiiiii..", ".iiiiiiiiii.", "..iiiiiiii..", "....jjjj....", "...jjjjjj...", "..jjjjjjjj.."],
+  tower: [ // 첨성대
+    "....gggg....", "....gggg....", "...gggggg...", "...gggggg...", "...gggggg...", "..gggggggg..", "..ggghhggg..", "..gggggggg..", ".gggggggggg.", ".gggggggggg.", "gggggggggggg", "hhhhhhhhhhhh"],
+  bell: [ // 범종
+    ".....jj.....", "....jiij....", "...iiiiii...", "..iiiiiiii..", "..iiiiiiii..", "..iijiijii..", "..iiiiiiii..", "..iiiiiiii..", "..iiiiiiii..", ".iiiiiiiiii.", ".jjjjjjjjjj.", "............"],
+  mural: [ // 벽화
+    "kkkkkkkkkkkk", "kffffffffffk", "kffmmffffffk", "kfmmmmfffffk", "kffmmffmmffk", "kffmmfmmmmfk", "kfmmmmffmmfk", "kffffffffffk", "kffnnnnnfffk", "kffffffffffk", "kkkkkkkkkkkk", "............"]
+};
+/* 유물 id → 도트 아이콘·색 덮어쓰기(없으면 vase 기본). */
+const PIXEL_FOR = {
+  g1: "vase", g2: "plank", g3: "book", g4: "hall", g5: "buddha", g6: "vase", gx: "book",
+  j1: "book", j2: "sundial", j3: "book", j4: "vase", j5: "painting", j6: "book", jx: "pagoda",
+  s1: "burner", s2: "tower", s3: "buddha", s4: "mural", s5: "seated", s6: "bell", sx: "book"
+};
+
 /* 발굴 노트 글쓰기(서술형) */
 const WRITING = {
   prompt: "오늘 파낸 유물 하나를 골라, 그 유물이 «그 시대에» 나올 수 있었던 까닭을 한 문장으로 써 보자. 전쟁·종교·왕의 정책 같은 사회 상황과 이어서.",
@@ -614,5 +709,13 @@ const GLOSSARY = {
   "성균관": "조선의 최고 교육 기관",
   "골품제": "신라의 신분 제도",
   "유학자": "유학(공자의 가르침)을 공부한 학자",
-  "복원": "깨진 것을 원래 모습으로 되살림"
+  "복원": "깨진 것을 원래 모습으로 되살림",
+  "수장고": "박물관이 전시하지 않는 유물을 보관하는 창고",
+  "진열장": "유물을 넣어 보여 주는 유리 상자",
+  "안내판": "전시물 옆에 설명을 적어 둔 판",
+  "평면도": "건물을 위에서 내려다본 그림",
+  "곡괭이": "땅이나 돌을 캐는 뾰족한 도구",
+  "표토": "맨 위에 있는 흙",
+  "공공누리": "나라가 공개한 자료를 출처를 적고 쓸 수 있게 한 표시",
+  "출처": "자료가 어디서 왔는지"
 };
