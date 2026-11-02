@@ -2,7 +2,7 @@
  * 브라우저: <script src="logic.js"> 뒤 window.Logic / node: tests/logic.test.mjs 가 vm으로 읽는다.
  */
 (function (root) {
-  /* 시드 난수 — 같은 학번이면 보기 순서가 같아 새로고침해도 헷갈리지 않는다. */
+  /* 시드 난수 — 같은 학번이면 보기 순서·블록 자리가 같아 새로고침해도 헷갈리지 않는다. */
   function seeded(seedStr) {
     var h = 2166136261;
     var s = String(seedStr || "seed");
@@ -15,9 +15,11 @@
     return a;
   }
 
-  /* 모드: "basic"(고려+조선 전기) / "flex"(삼국·남북국 층·전시실까지). 아래 층부터 파는 순서로 돌려준다. */
-  function layersFor(mode, LAYERS) {
-    return LAYERS.filter(function (l) { return mode === "flex" || !l.flexOnly; }).map(function (l) { return l.id; });
+  /* 모드: "basic"(고려+조선 전기) / "flex"(삼국·남북국 층·전시실까지).
+   * order: "bottom-up"(아래 층부터, 기본) / "top-down"(표토부터 파 내려가기). 파는 순서대로 층 id를 돌려준다. */
+  function layersFor(mode, LAYERS, order) {
+    var ids = LAYERS.filter(function (l) { return mode === "flex" || !l.flexOnly; }).map(function (l) { return l.id; });
+    return order === "top-down" ? ids.slice().reverse() : ids;
   }
   function roomsFor(mode, ROOMS) {
     return ROOMS.filter(function (r) { return mode === "flex" || !r.flexOnly; });
@@ -26,15 +28,35 @@
     return ARTIFACTS.filter(function (a) { return a.layer === layerId; });
   }
 
-  /* 이름 맞히기 보기: 층 안에서 앞 2개는 2지선다, 그다음부터 4지선다(단계 상승). 흘러든 유물은 시대 보기. */
-  function nameChoices(art, indexInLayer, seedStr) {
-    var n = indexInLayer < 2 ? 2 : 4;
+  /* 블록 배치: 층의 유물 id들을 total개 블록에 흩어 놓고 나머지는 null(돌멩이뿐). 학번+층 시드라 새로고침해도 같은 자리. */
+  function blockLayout(artIds, total, seedStr) {
+    var cells = artIds.slice();
+    while (cells.length < total) cells.push(null);
+    return shuffle(cells.slice(0, total), seeded(seedStr + ":blocks"));
+  }
+
+  /* 이름 맞히기 보기: 층에서 먼저 캔 2개(흘러든 유물 제외)는 2지선다, 그다음부터 4지선다(단계 상승). foundCount = 그 층에서 이미 이름을 맞혀 본 유물 수. */
+  function nameChoices(art, foundCount, seedStr) {
+    var n = foundCount < 2 ? 2 : 4;
     var ds = art.distractors.slice(0, n - 1);
     return shuffle([art.name].concat(ds), seeded(seedStr + ":" + art.id));
   }
-  function eraChoices(ERAS, mode) {
-    var ids = Object.keys(ERAS).filter(function (k) { return mode === "flex" || k !== "samguk" || true; });
-    return ids; // 세 시대 모두 보기로 둔다(기본 모드에서도 삼국·남북국을 오답 보기로 쓴다)
+
+  /* 성향 테스트 → 팀. answers = 문항별로 고른 보기 인덱스. 최다 득표 팀, 동점이면 학번 번호(no)로 가른다(번호 없으면 첫 팀). */
+  function assignTeam(answers, QUIZ, TEAMS, no) {
+    var tally = {};
+    TEAMS.forEach(function (t) { tally[t.id] = 0; });
+    QUIZ.forEach(function (q, i) {
+      var o = q.options[answers[i]];
+      if (o && tally[o.t] != null) tally[o.t]++;
+    });
+    var best = -1, tied = [];
+    TEAMS.forEach(function (t) {
+      if (tally[t.id] > best) { best = tally[t.id]; tied = [t.id]; }
+      else if (tally[t.id] === best) tied.push(t.id);
+    });
+    var k = Number(no) > 0 ? (Number(no) - 1) % tied.length : 0;
+    return { team: tied[k], tally: tally, tied: tied };
   }
 
   /* 퍼즐 판정 */
@@ -78,18 +100,19 @@
     return m + "분 " + (s < 10 ? "0" : "") + s + "초";
   }
 
-  /* 모둠 코드: 반·기숙사를 담는다. 예) 3-5-청자단 */
-  function teamCode(ban, houseName) {
-    return "3-" + String(ban || "?") + "-" + String(houseName || "").replace(/\s+/g, "");
+  /* 모둠 코드: 반·팀을 담는다. 예) 3-5-청룡. 개인(solo)은 학번에 (개인)을 붙인다. */
+  function teamCode(ban, teamName) {
+    return "3-" + String(ban || "?") + "-" + String(teamName || "").replace(/\s+/g, "");
   }
+  function soloCode(sid) { return String(sid || "") + "(개인)"; }
 
   /* 서술형 글자 수(공백 제외) */
   function countChars(t) { return String(t || "").replace(/\s/g, "").length; }
 
   root.Logic = {
     seeded: seeded, shuffle: shuffle, layersFor: layersFor, roomsFor: roomsFor, artifactsOf: artifactsOf,
-    nameChoices: nameChoices, eraChoices: eraChoices,
+    blockLayout: blockLayout, nameChoices: nameChoices, assignTeam: assignTeam,
     checkMatch: checkMatch, checkOrder: checkOrder, checkChoice: checkChoice, checkKey: checkKey,
-    vaultCode: vaultCode, digScore: digScore, fmtElapsed: fmtElapsed, teamCode: teamCode, countChars: countChars
+    vaultCode: vaultCode, digScore: digScore, fmtElapsed: fmtElapsed, teamCode: teamCode, soloCode: soloCode, countChars: countChars
   };
 })(typeof window !== "undefined" ? window : globalThis);
