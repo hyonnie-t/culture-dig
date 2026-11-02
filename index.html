@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- 포털 로그인 세션 자동 첨부(history26 v83) -->
+<script src="https://hyonnie-t.github.io/history26/snippets/portal_auth.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>유물 발굴 → 박물관 방탈출</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
+
+<header class="topbar" id="topbar">
+  <div class="wrap topbar-in">
+    <button class="brand" id="brandBtn" type="button" title="첫 화면으로">🏺 유물 발굴 → 박물관 방탈출</button>
+    <div class="top-stat" id="topStat" aria-live="polite"></div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+  <!-- 로그인(포털 밖에서 열었을 때만) -->
+  <section id="scrLogin" class="scr" hidden>
+    <div class="card">
+      <h2>학번과 이름을 적어 줘</h2>
+      <p class="muted">포털에서 열면 자동으로 채워져. (학번 5자리: 학년1 + 반2 + 번호2)</p>
+      <div class="row2">
+        <label>학번 <input id="inSid" inputmode="numeric" maxlength="5" autocomplete="off"></label>
+        <label>이름 <input id="inName" maxlength="10" autocomplete="off"></label>
+      </div>
+      <p class="err" id="loginErr"></p>
+      <button class="btn primary" id="loginBtn" type="button">시작</button>
+    </div>
+  </section>
+
+  <!-- 첫 화면: 기숙사 고르기 + 활동 고르기 -->
+  <section id="scrHome" class="scr" hidden>
+    <div class="hero">
+      <div class="eyebrow" id="homeEyebrow">3학년 한국사 · 문화사 · 교과서 100~109쪽, 128~133쪽</div>
+      <h1>흙 속에서 유물을 캐고, 박물관에서 탈출하라</h1>
+      <p class="lead">아래 층부터 판다. 유물이 왜 <b>그 시대</b>에 나왔는지 알아내면 기숙사 점수가 쌓여.</p>
+    </div>
+
+    <div class="card">
+      <h2>① 내 기숙사</h2>
+      <p class="muted">선생님이 정해 준 기숙사를 눌러. (번호로 추천된 칸에 ☆가 있어)</p>
+      <div class="house-grid" id="houseGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2>② 오늘 활동</h2>
+      <div class="act-grid">
+        <button class="act-btn" id="goDig" type="button" disabled>
+          <span class="act-emoji">⛏️</span><span class="act-title">1차시 · 유물 발굴</span>
+          <span class="act-desc">지층을 아래부터 파며 유물 카드를 맞힌다. 혼자 또는 짝.</span>
+        </button>
+        <button class="act-btn" id="goEscape" type="button" disabled>
+          <span class="act-emoji">🔐</span><span class="act-title">2차시 · 박물관 방탈출</span>
+          <span class="act-desc">모둠(기숙사)이 전시실 퍼즐을 풀어 열쇠 숫자를 모으고 금고를 연다.</span>
+        </button>
+      </div>
+      <p class="muted" id="modeNote"></p>
+    </div>
+  </section>
+
+  <!-- 발굴 -->
+  <section id="scrDig" class="scr" hidden>
+    <div class="dig-layout">
+      <aside class="strata card" id="strata" aria-label="지층 단면"></aside>
+      <div class="dig-main">
+        <div class="card" id="spotCard"></div>
+        <div class="card artifact-card" id="artCard" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 발굴 노트 + 글쓰기 + 제출 -->
+  <section id="scrNote" class="scr" hidden>
+    <div class="card">
+      <h2>📒 내 발굴 노트</h2>
+      <p class="muted" id="noteSummary"></p>
+      <div class="note-list" id="noteList"></div>
+    </div>
+    <div class="card">
+      <h2>✍️ 한 줄 쓰기</h2>
+      <p id="writePrompt"></p>
+      <label class="muted">어느 유물?
+        <select id="writePick"></select>
+      </label>
+      <textarea id="writeText" rows="4"></textarea>
+      <div class="row-between">
+        <span class="muted"><span id="writeCount">0</span>자 (공백 빼고) · 최소 <span id="writeMin"></span>자</span>
+        <button class="btn ghost small" id="hintToggle" type="button">💡 막막하면 힌트 보기</button>
+      </div>
+      <p class="hint-box" id="hintBox" hidden></p>
+      <p class="err" id="noteErr"></p>
+      <button class="btn primary" id="submitDig" type="button">발굴 노트 제출</button>
+      <p class="ok" id="noteMsg"></p>
+    </div>
+  </section>
+
+  <!-- 방탈출 입구 -->
+  <section id="scrEscape" class="scr" hidden>
+    <div class="card">
+      <h2>🔐 박물관 방탈출 — 입장</h2>
+      <p>문이 잠겼다. 전시실마다 퍼즐을 풀어 <b>열쇠 숫자</b>를 모으고, 마지막 금고를 열면 탈출이야. 모둠 태블릿 한 대로 함께 풀어.</p>
+      <div class="row2">
+        <label>모둠 코드 <input id="teamCode" maxlength="20" autocomplete="off"></label>
+        <label>모둠 이름(선택) <input id="teamName" maxlength="12" autocomplete="off"></label>
+      </div>
+      <p class="muted">모둠 코드는 반과 기숙사로 자동으로 채워져. 선생님이 다른 코드를 주면 그걸로 바꿔.</p>
+      <p class="muted">힌트를 열면 한 번에 1분이 기록 시간에 더해져.</p>
+      <button class="btn primary" id="startEscape" type="button">입장 · 시간 시작</button>
+    </div>
+  </section>
+
+  <!-- 전시실 목록 -->
+  <section id="scrRooms" class="scr" hidden>
+    <div class="room-grid" id="roomGrid"></div>
+    <div class="card vault-card" id="vaultEntry"></div>
+  </section>
+
+  <!-- 퍼즐 -->
+  <section id="scrPuzzle" class="scr" hidden>
+    <div class="card" id="puzzleCard"></div>
+  </section>
+
+  <!-- 금고 -->
+  <section id="scrVault" class="scr" hidden>
+    <div class="card" id="vaultCard"></div>
+  </section>
+
+  <!-- 탈출 완료 -->
+  <section id="scrEscaped" class="scr" hidden>
+    <div class="card">
+      <h2>🎉 탈출!</h2>
+      <p id="escapedSummary"></p>
+      <p class="muted">선생님 화면에 기록돼. 순위에 따라 기숙사 점수가 붙어.</p>
+      <p class="err" id="escErr"></p>
+      <button class="btn primary" id="submitEscape" type="button">탈출 기록 제출</button>
+      <p class="ok" id="escMsg"></p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot muted">비상교육 중등 역사② 기준 · <a href="#" id="modeLink"></a></footer>
+
+<script src="focus_guard.js"></script>
+<script src="draft_guard.js"></script>
+<script src="glossary.js"></script>
+<script src="data.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
