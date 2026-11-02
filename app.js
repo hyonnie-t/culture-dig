@@ -43,10 +43,10 @@ function load() {
 }
 
 /* 보기 순서 섞기: 학번(또는 모둠)+문항 id 시드라 새로고침해도 같다. 돌려주는 값은 원본 인덱스 배열. */
-function orderOf(len, seedStr) {
+function orderOf(len, seedStr, avoidIdentity) {
   const idx = []; for (let i = 0; i < len; i++) idx.push(i);
   let out = Logic.shuffle(idx, Logic.seeded(seedStr));
-  if (len > 1 && out.every((v, i) => v === i)) out = out.slice().reverse(); // 항등 배열이면 뒤집는다
+  if (avoidIdentity && len > 1 && out.every((v, i) => v === i)) out = out.slice().reverse(); // 짝 맞추기만: 항등 배열이면 뒤집는다(보기 섞기에는 안 씀 — 정답 위치가 쏠린다)
   return out;
 }
 
@@ -99,7 +99,7 @@ function renderHome() {
   const layers = Logic.layersFor(S.mode, LAYERS).map((id) => LAYERS.find((l) => l.id === id).title).join(" → ");
   $("modeNote").textContent = (S.mode === "flex" ? "유연 모드(3층·5실): " : "공통 모드(2층·4실): ") + layers;
   $("homeEyebrow").textContent = S.mode === "flex" ? "3학년 한국사 · 문화사 · 교과서 36~43, 64~71, 100~109, 128~133쪽" : "3학년 한국사 · 문화사 · 교과서 100~109, 128~133쪽";
-  $("modeLink").textContent = S.mode === "flex" ? "공통 모드로(고려·조선 전기만)" : "유연 모드로(삼국·남북국 층 추가)";
+  $("modeLink").textContent = " · " + (S.mode === "flex" ? "공통 모드로(고려·조선 전기만)" : "유연 모드로(삼국·남북국 층 추가)");
   $("modeLink").hidden = !S.preview; // 학생 화면에서는 숨긴다(진행이 섞이지 않게). 모드는 선생님이 주소로 정한다.
 }
 
@@ -421,7 +421,7 @@ function renderPuzzle() {
     h.push('<p class="result-line good">✓ 해결한 퍼즐이야.</p>');
     if (p.type === "key") h.push('<div class="key-reveal">🔑 이 방의 열쇠 숫자: ' + esc(p.answer) + '</div>');
   } else if (p.type === "match") {
-    const rights = orderOf(p.pairs.length, p.id + ":" + (S.esc.team || "t"));
+    const rights = orderOf(p.pairs.length, p.id + ":" + (S.esc.team || "t"), true);
     st.rights = rights; st.map = st.map || {}; st.selLeft = null;
     h.push('<div class="match-grid"><div class="match-col"><h3>유물</h3>' + p.pairs.map((pr, i) => '<button type="button" class="m-item m-left' + (st.map[i] != null ? " paired" : "") + '" data-i="' + i + '"><span class="m-tag">' + CIRC[i] + '</span>' + esc(pr[0]) + (st.map[i] != null ? ' <span class="m-tag">→ ' + KOR[rights.indexOf(st.map[i])] + '</span>' : "") + '</button>').join("") + '</div>');
     h.push('<div class="match-col"><h3>설명</h3>' + rights.map((ri, k) => '<button type="button" class="m-item m-right" data-ri="' + ri + '"><span class="m-tag">' + KOR[k] + '</span>' + esc(p.pairs[ri][1]) + '</button>').join("") + '</div></div>');

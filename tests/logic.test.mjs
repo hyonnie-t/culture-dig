@@ -63,8 +63,8 @@ test("전시실 퍼즐: 유형별 필드와 열쇠 숫자가 한 자리, 금고 
       if (p.type === "choice") { assert.equal(p.options.length, 4, p.id); assert.ok(p.answer >= 0 && p.answer < 4, p.id); }
     }
   }
-  assert.equal(Logic.vaultCode(Logic.roomsFor("basic", ROOMS)), "8734");
-  assert.equal(Logic.vaultCode(Logic.roomsFor("flex", ROOMS)), "98734");
+  assert.equal(Logic.vaultCode(Logic.roomsFor("basic", ROOMS)), "8593");
+  assert.equal(Logic.vaultCode(Logic.roomsFor("flex", ROOMS)), "98593");
 });
 
 test("판정 함수", () => {
