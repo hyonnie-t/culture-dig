@@ -6,7 +6,8 @@ const CONFIG = {
   SHEET_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyXSjCfWY_HiZFqW_OBR-FQDoIfF1z_STqyKWUI31MacHeY3u7hbirFSFDvW-5yuUHaJQ/exec",
   GAME_DIG: "문화사_유물발굴",        // 커리큘럼 활동 id와 글자까지 같게
   GAME_ESCAPE: "문화사_박물관방탈출",
-  HINT_PENALTY_SEC: 60
+  HINT_PENALTY_SEC: 60,
+  WRONG_PENALTY_SEC: 20 // 4지선다·열쇠 숫자 오답 1회마다(찍기 방지)
 };
 
 const S = {
@@ -22,7 +23,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":
 const CIRC = ["①", "②", "③", "④", "⑤"], KOR = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ"];
 
 /* ───────── 저장(새로고침 대비) ───────── */
-function storeKey(kind) { return "culture-dig:" + kind + ":" + S.sid; }
+function storeKey(kind) { return "culture-dig:" + kind + ":" + S.mode + ":" + S.sid; }
 function save() {
   if (S.preview || !S.sid) return;
   try {
@@ -39,6 +40,14 @@ function load() {
     const e = JSON.parse(localStorage.getItem(storeKey("esc")) || "null");
     if (e && e.esc && e.esc.mode === S.mode) S.esc = e.esc;
   } catch (e) { /* 무시 */ }
+}
+
+/* 보기 순서 섞기: 학번(또는 모둠)+문항 id 시드라 새로고침해도 같다. 돌려주는 값은 원본 인덱스 배열. */
+function orderOf(len, seedStr) {
+  const idx = []; for (let i = 0; i < len; i++) idx.push(i);
+  let out = Logic.shuffle(idx, Logic.seeded(seedStr));
+  if (len > 1 && out.every((v, i) => v === i)) out = out.slice().reverse(); // 항등 배열이면 뒤집는다
+  return out;
 }
 
 /* ───────── 화면 전환 ───────── */
@@ -91,6 +100,7 @@ function renderHome() {
   $("modeNote").textContent = (S.mode === "flex" ? "유연 모드(3층·5실): " : "공통 모드(2층·4실): ") + layers;
   $("homeEyebrow").textContent = S.mode === "flex" ? "3학년 한국사 · 문화사 · 교과서 36~43, 64~71, 100~109, 128~133쪽" : "3학년 한국사 · 문화사 · 교과서 100~109, 128~133쪽";
   $("modeLink").textContent = S.mode === "flex" ? "공통 모드로(고려·조선 전기만)" : "유연 모드로(삼국·남북국 층 추가)";
+  $("modeLink").hidden = !S.preview; // 학생 화면에서는 숨긴다(진행이 섞이지 않게). 모드는 선생님이 주소로 정한다.
 }
 
 /* ───────── 발굴 ───────── */
@@ -111,7 +121,7 @@ function renderStrata() {
     const cls = i < S.dig.layerIdx ? "done" : (i === S.dig.layerIdx ? "active" : "locked");
     rows.push('<div class="stratum ' + l.id + " " + cls + '">' + esc(l.title) + '<span class="st-sub">' + esc(l.sub) + '</span><span class="st-prog">' + (cls === "locked" ? "🔒" : got + "/" + arts.length) + '</span></div>');
   }
-  rows.push('<p class="muted" style="margin:.4rem 0 0;font-size:.8rem">⛏️ 아래 층부터 판다</p>');
+  rows.push('<p class="muted" style="margin:.4rem 0 0">⛏️ 아래 층부터 판다</p>');
   $("strata").innerHTML = rows.join("");
 }
 
@@ -164,11 +174,11 @@ function renderArtifact() {
   } else if (c.step === "repair") {
     h.push('<p class="result-line bad">💥 틀렸어! 유물이 깨졌다. 문장을 채워 복원하자. (정답: <b>' + esc(a.name) + '</b>)</p>');
     h.push('<p>' + esc(a.repair.sentence).replace("___", '<span class="blank">　</span>') + '</p>');
-    h.push('<div class="chips">' + a.repair.options.map((o, i) => '<button type="button" class="chip" data-i="' + i + '">' + esc(o) + '</button>').join("") + '</div>');
+    h.push('<div class="chips">' + orderOf(a.repair.options.length, S.sid + ":rp:" + a.id).map((i) => '<button type="button" class="chip" data-i="' + i + '">' + esc(a.repair.options[i]) + '</button>').join("") + '</div>');
   } else if (c.step === "bg") {
     h.push('<p class="result-line good">' + (c.firstTry ? "⛏️ 발굴 성공! " : (c.repaired ? "🩹 복원 완료! " : "🧩 조각으로 남겼어. ")) + '<b>' + esc(a.name) + '</b> <span class="muted">(' + esc(a.page) + ')</span></p>');
     h.push('<h3>왜 ' + esc(eraName) + '에 나왔을까?</h3><p>' + esc(a.bg.q) + '</p>');
-    h.push('<div class="choice-grid">' + a.bg.options.map((o, i) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[i] + ' ' + esc(o) + '</button>').join("") + '</div>');
+    h.push('<div class="choice-grid">' + orderOf(a.bg.options.length, S.sid + ":bg:" + a.id).map((i, k) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[k] + ' ' + esc(a.bg.options[i]) + '</button>').join("") + '</div>');
   } else if (c.step === "era1") {
     h.push('<h3>이 유물은 ' + esc(eraName) + ' 층에서 나왔어. 정말 ' + esc(eraName) + '의 유물일까?</h3>');
     h.push('<div class="choice-grid"><button type="button" class="choice" data-v="yes">맞아, ' + esc(eraName) + ' 유물이야</button><button type="button" class="choice" data-v="no">아니야, 다른 시대에서 흘러든 유물이야</button></div>');
@@ -180,7 +190,7 @@ function renderArtifact() {
     if (a.intruder) {
       h.push('<p class="result-line ' + (r.eraCorrect ? "good" : "bad") + '">' + (r.eraCorrect ? "✓ 맞아. " : "✗ 아쉽다. ") + '<b>' + esc(a.name) + '</b>은(는) <b>' + esc(ERAS[a.trueEra].name) + '</b> 유물이야. <span class="muted">(' + esc(a.page) + ')</span></p>');
     } else {
-      h.push('<p class="result-line ' + (r.bgCorrect ? "good" : "bad") + '">' + (r.bgCorrect ? "✓ 배경까지 맞혔어!" : "✗ 배경은 이거야: " + CIRC[a.bg.answer]) + '</p>');
+      h.push('<p class="result-line ' + (r.bgCorrect ? "good" : "bad") + '">' + (r.bgCorrect ? "✓ 배경까지 맞혔어!" : "✗ 배경은 이거야 — " + esc(a.bg.options[a.bg.answer])) + '</p>');
     }
     h.push('<div class="note-line">📒 노트: ' + esc(a.note) + '</div>');
     h.push('<button type="button" class="btn primary" id="nextSpot">다음 흙더미 →</button>');
@@ -338,7 +348,7 @@ function newEsc() {
 function elapsedSec() {
   if (!S.esc || !S.esc.start) return 0;
   const end = S.esc.escapedAt || Date.now();
-  return Math.round((end - S.esc.start) / 1000) + S.esc.hints * CONFIG.HINT_PENALTY_SEC;
+  return Math.round((end - S.esc.start) / 1000) + S.esc.hints * CONFIG.HINT_PENALTY_SEC + (S.esc.wrongs || 0) * CONFIG.WRONG_PENALTY_SEC;
 }
 function tickTimer() {
   const el = $("timerTxt");
@@ -411,8 +421,7 @@ function renderPuzzle() {
     h.push('<p class="result-line good">✓ 해결한 퍼즐이야.</p>');
     if (p.type === "key") h.push('<div class="key-reveal">🔑 이 방의 열쇠 숫자: ' + esc(p.answer) + '</div>');
   } else if (p.type === "match") {
-    const rnd = Logic.seeded(p.id + ":" + (S.esc.team || "t"));
-    const rights = Logic.shuffle(p.pairs.map((x, i) => i), rnd);
+    const rights = orderOf(p.pairs.length, p.id + ":" + (S.esc.team || "t"));
     st.rights = rights; st.map = st.map || {}; st.selLeft = null;
     h.push('<div class="match-grid"><div class="match-col"><h3>유물</h3>' + p.pairs.map((pr, i) => '<button type="button" class="m-item m-left' + (st.map[i] != null ? " paired" : "") + '" data-i="' + i + '"><span class="m-tag">' + CIRC[i] + '</span>' + esc(pr[0]) + (st.map[i] != null ? ' <span class="m-tag">→ ' + KOR[rights.indexOf(st.map[i])] + '</span>' : "") + '</button>').join("") + '</div>');
     h.push('<div class="match-col"><h3>설명</h3>' + rights.map((ri, k) => '<button type="button" class="m-item m-right" data-ri="' + ri + '"><span class="m-tag">' + KOR[k] + '</span>' + esc(p.pairs[ri][1]) + '</button>').join("") + '</div></div>');
@@ -423,7 +432,7 @@ function renderPuzzle() {
     h.push('<ol class="order-list">' + st.arr.map((it, i) => '<li class="order-item"><span class="o-no">' + (i + 1) + '</span><span class="o-txt">' + esc(it) + '</span><button type="button" class="o-btn" data-up="' + i + '" aria-label="위로">▲</button><button type="button" class="o-btn" data-down="' + i + '" aria-label="아래로">▼</button></li>').join("") + '</ol>');
     h.push('<p class="muted">▲▼로 순서를 바꿔. 1번이 가장 이른 것.</p><button type="button" class="btn primary" id="checkBtn">확인</button>');
   } else if (p.type === "choice") {
-    h.push('<div class="choice-grid">' + p.options.map((o, i) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[i] + ' ' + esc(o) + '</button>').join("") + '</div>');
+    h.push('<div class="choice-grid">' + orderOf(p.options.length, (S.esc.team || "t") + ":" + p.id).map((i, k) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[k] + ' ' + esc(p.options[i]) + '</button>').join("") + '</div>');
   } else if (p.type === "key") {
     h.push('<p><input id="keyIn" class="key-input" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="열쇠 숫자"></p><button type="button" class="btn primary" id="checkBtn">확인</button>');
   }
@@ -466,12 +475,12 @@ function renderPuzzle() {
     card.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => {
       st.tries++;
       if (Logic.checkChoice(p, b.dataset.i).correct) { b.classList.add("right"); solvePuzzle(p); }
-      else { b.classList.add("wrong"); b.disabled = true; $("puzErr").textContent = "아니야. 사료를 다시 읽어 봐."; save(); }
+      else { b.classList.add("wrong"); b.disabled = true; S.esc.wrongs = (S.esc.wrongs || 0) + 1; $("puzErr").textContent = "아니야. 사료를 다시 읽어 봐. (+" + (CONFIG.WRONG_PENALTY_SEC) + "초)"; save(); renderTop(); }
     }));
   } else if (p.type === "key") {
     $("checkBtn").addEventListener("click", () => {
       st.tries++;
-      if (Logic.checkKey(p, $("keyIn").value).correct) solvePuzzle(p); else { $("puzErr").textContent = "그 숫자가 아니야."; save(); }
+      if (Logic.checkKey(p, $("keyIn").value).correct) solvePuzzle(p); else { S.esc.wrongs = (S.esc.wrongs || 0) + 1; $("puzErr").textContent = "그 숫자가 아니야. (+" + CONFIG.WRONG_PENALTY_SEC + "초)"; save(); renderTop(); }
     });
     $("keyIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("checkBtn").click(); });
   }
@@ -528,7 +537,7 @@ function renderVault() {
 
 function renderEscaped() {
   const sec = elapsedSec();
-  $("escapedSummary").innerHTML = "<b>" + esc(S.esc.team) + (S.esc.teamName ? " (" + esc(S.esc.teamName) + ")" : "") + "</b> · 기록 <b>" + Logic.fmtElapsed(sec) + "</b> (힌트 " + S.esc.hints + "회, 회당 1분 포함) · " + (S.mode === "flex" ? "5실" : "4실");
+  $("escapedSummary").innerHTML = "<b>" + esc(S.esc.team) + (S.esc.teamName ? " (" + esc(S.esc.teamName) + ")" : "") + "</b> · 기록 <b>" + Logic.fmtElapsed(sec) + "</b> (힌트 " + S.esc.hints + "회 ×1분, 오답 " + (S.esc.wrongs || 0) + "회 ×20초 포함) · " + (S.mode === "flex" ? "5실" : "4실");
   if (S.esc.submitted) { $("submitEscape").disabled = true; $("submitEscape").textContent = "제출 완료"; $("escMsg").textContent = "기록이 선생님 화면에 들어갔어."; }
 }
 
@@ -541,8 +550,8 @@ async function submitEscape() {
     groupId: S.esc.team,
     choiceSummary: S.esc.team + " / " + Logic.fmtElapsed(sec) + " / 힌트 " + S.esc.hints + " / " + S.mode,
     diffSummary: "",
-    reflection: "탈출 " + Logic.fmtElapsed(sec) + " · 모둠 " + S.esc.team + (S.esc.teamName ? "(" + S.esc.teamName + ")" : "") + " · 힌트 " + S.esc.hints + "회 · 시도 " + tries,
-    choicesJson: JSON.stringify({ team: S.esc.team, teamName: S.esc.teamName, mode: S.mode, elapsedSec: sec, hints: S.esc.hints, start: S.esc.start, escapedAt: S.esc.escapedAt, attempts: S.esc.attempts, ts: new Date().toISOString() })
+    reflection: "탈출 " + Logic.fmtElapsed(sec) + " · 모둠 " + S.esc.team + (S.esc.teamName ? "(" + S.esc.teamName + ")" : "") + " · 힌트 " + S.esc.hints + "회 · 오답 " + (S.esc.wrongs || 0) + "회 · 시도 " + tries,
+    choicesJson: JSON.stringify({ team: S.esc.team, teamName: S.esc.teamName, house: (HOUSES.find((x) => x.id === S.house) || {}).name || "", mode: S.mode, elapsedSec: sec, hints: S.esc.hints, wrongs: S.esc.wrongs || 0, start: S.esc.start, escapedAt: S.esc.escapedAt, attempts: S.esc.attempts, ts: new Date().toISOString() })
   };
   Object.assign(payload, FocusGuard.payload());
   S.sending = true; $("submitEscape").disabled = true; $("submitEscape").textContent = "보내는 중…";
@@ -576,7 +585,8 @@ function setStudent(sid, name) {
   S.sid = String(sid || "").trim(); S.name = String(name || "").trim();
   if (/^\d{5}$/.test(S.sid)) { S.grade = Number(S.sid[0]); S.ban = Number(S.sid.slice(1, 3)); S.no = Number(S.sid.slice(3)); }
   load();
-  FocusGuard.start({ key: CONFIG.GAME_DIG + ":" + S.sid }); // 작성 중 화면 이탈·붙여넣기 기록
+  const scr = new URLSearchParams(location.search).get("screen");
+  FocusGuard.start({ key: (scr === "escape" ? CONFIG.GAME_ESCAPE : CONFIG.GAME_DIG) + ":" + S.sid }); // 작성 중 화면 이탈·붙여넣기 기록
   if (window.DraftGuard) DraftGuard.start({ key: CONFIG.GAME_DIG, sid: S.sid }); // 발굴 노트 글 임시저장
 }
 
