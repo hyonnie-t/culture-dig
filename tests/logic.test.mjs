@@ -107,6 +107,24 @@ test("팀 뽑기: 인원 차이 최대 1명, 지망을 살리고, 같은 시드�
   // 지망이 고르게 나뉘면 전원 1지망
   const even = {}; nos.forEach((no, i) => { even[no] = [ids[i % 4]]; });
   assert.equal(Logic.drawTeams(nos, even, TEAMS, "7반").first, 28);
+  // 1지망 수가 최우선(검토 재현 사례: 8명, 가능한 1지망 최대 5명) — 무작위 지망에서도 완전 탐색 최대치와 같다
+  const firsts = { 1: "나침반", 2: "붓", 3: "곡괭이", 4: "붓", 5: "나침반", 6: "붓", 7: "붓", 8: "나침반" };
+  const p8 = {}; Object.keys(firsts).forEach(no => { p8[no] = [firsts[no], ...ids.filter(x => x !== firsts[no])]; });
+  assert.equal(Logic.drawTeams([1, 2, 3, 4, 5, 6, 7, 8], p8, TEAMS, "s").first, 5);
+  const rnd = Logic.seeded("fuzz");
+  for (let k = 0; k < 60; k++) {
+    const n = 8 + Math.floor(rnd() * 25), nn = Array.from({ length: n }, (_, i) => i + 1), pp = {};
+    nn.forEach(no => { pp[no] = Logic.shuffle(ids, rnd); });
+    const cnt = {}; ids.forEach(id => { cnt[id] = 0; }); nn.forEach(no => cnt[pp[no][0]]++);
+    const base = Math.floor(n / 4), ex = n % 4;
+    // 최대 1지망 수 = 큰 팀(ex개)을 어디에 두느냐에 따라 Σ min(지망 수, 정원)의 최댓값
+    let best = 0;
+    for (let mask = 0; mask < 16; mask++) {
+      if (ids.filter((_, i) => mask >> i & 1).length !== ex) continue;
+      best = Math.max(best, ids.reduce((s, id, i) => s + Math.min(cnt[id], base + (mask >> i & 1)), 0));
+    }
+    assert.equal(Logic.drawTeams(nn, pp, TEAMS, "f" + k).first, best, n + "명 " + k);
+  }
   // 시드가 다르면 (대개) 다르게 섞인다
   assert.notDeepEqual(Logic.drawTeams(nos, {}, TEAMS, "a").assign, Logic.drawTeams(nos, {}, TEAMS, "b").assign);
 });
@@ -151,6 +169,9 @@ test("붙여 넣기 읽기: 학번·점수·탈출·지망, 반·활동 거르�
   const quiz = Logic.parsePasted(text, 5, "문화사_팀테스트", G, TEAMS);
   assert.equal(quiz[7].prefs.join(), "곡괭이,붓,돋보기,나침반");
   assert.equal(Object.keys(Logic.parsePasted("30512 점수 3", 5, "문화사_유물발굴", G, TEAMS)).length, 1, "활동 이름 없는 줄은 거르지 않음");
+  assert.equal(Object.keys(Logic.parsePasted("30512 홍길동 그냥 메모", 5, "문화사_유물발굴", G, TEAMS)).length, 0, "점수·지망 없는 줄은 제출로 안 셈");
+  const keep = Logic.parsePasted("30512 지망 붓>곡괭이\n30512 점수 30 · 붓", 5, "", G, TEAMS);
+  assert.equal(keep[12].prefs.join(), "붓,곡괭이", "아래 줄이 지망을 지우지 않음"); assert.equal(keep[12].score, 30);
 });
 
 test("수장고 순서: 팀마다 다르고, 개인용은 1번부터", () => {

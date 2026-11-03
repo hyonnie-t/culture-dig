@@ -30,7 +30,7 @@ const artById = (id) => ARTIFACTS.find((a) => a.id === id);
 
 /* ───────── 저장(새로고침 대비) ─────────
  * 팀은 모드(flex)와 상관없는 키에 둔다(모드를 바꿔도 팀은 그대로). 진행(dig·esc)은 모드별. */
-function storeKey(kind) { return "culture-dig:" + kind + ":" + S.mode + ":" + S.sid; }
+function storeKey(kind) { return "culture-dig:" + kind + (kind === "esc" && S.solo ? "-solo" : "") + ":" + S.mode + ":" + S.sid; } // 개인용 방탈출은 팀 진행과 따로 저장
 function teamKey() { return "culture-dig:team:" + S.sid; }
 function save() {
   if (S.preview || !S.sid) return;
@@ -187,7 +187,7 @@ function startQuiz() {
 }
 async function sendQuiz() {
   const q = S.quiz;
-  if (!q || !q.ranking || q.submitted || S.preview) return;
+  if (!q || !q.ranking || q.submitted || S.preview || !S.sid) return;
   const ty = teamOf(q.ranking[0]);
   try {
     await postToSheet({
@@ -215,7 +215,7 @@ function renderQuiz() {
     if (!q.ranking) { const r = Logic.quizRanking(q.answers, QUIZ, TEAMS, S.sid || "p"); q.ranking = r.ranking; q.tally = r.tally; save(); sendQuiz(); }
     const ty = teamOf(q.ranking[0]);
     card.innerHTML = '<div class="q-result"><span class="r-emoji">✨</span><div class="r-name">너는 ' + esc(ty.type) + '!</div><p>' + esc(ty.trait) + '. 그게 너의 발굴 스타일이야.</p>' +
-      '<p class="muted">선생님이 반 전체 결과를 보고 인원이 고르게 네 팀으로 나눠 칠판에 띄워 줄 거야. 그동안 발굴을 시작해.</p>' +
+      '<p class="muted">선생님이 반 전체 결과를 보고 인원이 고르게 네 팀으로 나눠 칠판에 띄워 줄 거야. </p>' +
       '<button type="button" class="btn primary" id="quizGo">' + (S.after === "dig" ? "⛏️ 발굴하러 가기" : "첫 화면으로") + '</button></div>';
     $("quizGo").addEventListener("click", () => { renderHome(); if (S.after === "dig") startDig(); else show("scrHome"); });
     renderTop();
@@ -554,6 +554,7 @@ function roomDone(r) { return r.puzzles.every((p) => S.esc.solved[p.id]); }
 function roomKey(r) { const k = r.puzzles.find((p) => p.type === "key"); return k ? String(k.answer) : ""; }
 function teamIdx() { return S.solo ? -1 : TEAMS.findIndex((t) => t.id === S.team); }
 function vaultOrderNow() { return Logic.vaultOrder(teamIdx(), roomsNow().length); }
+function curEscCode() { return S.solo ? Logic.soloCode(S.sid) : Logic.teamCode(S.ban, S.team || "팀"); } // 입장 뒤 팀을 바꿔도 조번호가 따라간다
 function escNow() { return Logic.escScore(S.esc, roomsNow(), SCORING); }
 function roomOpen(i) {
   if (S.solo || skip()) return true;
@@ -573,7 +574,7 @@ function renderEscapeEntry() {
   const rooms = roomsNow();
   $("rolePick").innerHTML = rooms.map((r, i) => '<button type="button" class="chip role-chip' + (S.esc.role === i ? " sel" : "") + '" data-i="' + i + '">' + r.emoji + " " + (i + 1) + "실 " + esc(r.title) + "</button>").join("");
   $("rolePick").querySelectorAll(".role-chip").forEach((b) => b.addEventListener("click", () => { S.esc.role = Number(b.dataset.i); save(); renderEscapeEntry(); }));
-  $("roleNote").textContent = S.solo ? "처음 풀 방을 골라. 점수는 이 방을 «담당 방»으로 계산해." : "팀원끼리 먼저 정하고 각자 눌러. 방마다 1~2명씩. 담당 방 열쇠 숫자는 너만 알게 돼 — 팀원들이 너에게 물어볼 거야.";
+  $("roleNote").textContent = S.solo ? "처음 풀 방을 골라. 점수는 이 방을 «담당 방»으로 계산해." : "팀원끼리 먼저 정하고 각자 눌러. 방마다 1~2명씩. 담당 방 열쇠 숫자는 그 방을 맡은 사람만 알게 돼 — 다른 팀원들이 너에게 물어볼 거야.";
   $("startEscape").disabled = !((S.team || S.solo || skip()) && S.esc.role >= 0);
   show("scrEscape");
 }
@@ -590,7 +591,7 @@ function renderRooms() {
   const rooms = roomsNow();
   const order = vaultOrderNow();
   const sc = escNow();
-  const h = ['<div class="floor-head"><h2>🗺️ 박물관 평면도</h2><span>' + esc(S.esc.team) + ' · 담당 ' + (S.esc.role + 1) + '실</span></div><div class="floor-in">'];
+  const h = ['<div class="floor-head"><h2>🗺️ 박물관 평면도</h2><span>' + esc(curEscCode()) + ' · 담당 ' + (S.esc.role + 1) + '실</span></div><div class="floor-in">'];
   rooms.forEach((r, i) => {
     const n = r.puzzles.filter((p) => S.esc.solved[p.id]).length;
     const done = roomDone(r);
@@ -780,7 +781,7 @@ function renderVault() {
 
 function renderEscaped() {
   const sc = escNow();
-  $("escapedSummary").innerHTML = "<b>" + esc(S.esc.team) + "</b> · 담당 " + (S.esc.role + 1) + "실 · 걸린 시간 " + Logic.fmtElapsed(elapsedSec()) +
+  $("escapedSummary").innerHTML = "<b>" + esc(curEscCode()) + "</b> · 담당 " + (S.esc.role + 1) + "실 · 걸린 시간 " + Logic.fmtElapsed(elapsedSec()) +
     "<br>내 점수 <b>" + sc.score + "</b>/20 (담당 방 " + sc.role + " · 수장고 " + sc.vault + " · 자물쇠 " + sc.final + " · 도움 " + sc.help + ")";
   const done = S.esc.submittedEscaped;
   $("submitEscape").disabled = done; $("submitEscape").textContent = done ? "제출 완료" : "탈출 기록 제출";
@@ -800,11 +801,11 @@ async function submitEscape(from) {
   const tries = Object.keys(S.esc.attempts).map((k) => k + ":" + (S.esc.attempts[k].tries || 0) + (S.esc.attempts[k].hint ? "h" : "")).join(" ");
   const payload = {
     studentId: S.sid, studentName: S.name, gameName: CONFIG.GAME_ESCAPE,
-    groupId: S.esc.team,
+    groupId: curEscCode(),
     choiceSummary: "점수 " + sc.score + " · " + (S.solo ? "개인" : (S.team || "")) + " · 담당 " + (S.esc.role + 1) + "실 · " + (escaped ? "탈출함" : "탈출 못 함") + " · " + Logic.fmtElapsed(sec) + " · " + S.mode,
     diffSummary: "",
-    reflection: (escaped ? "탈출 " : "진행 ") + Logic.fmtElapsed(sec) + " · " + S.esc.team + " · 담당 " + (S.esc.role + 1) + "실 · 점수 " + sc.score + " · 힌트 " + S.esc.hints + "회 · 시도 " + tries,
-    choicesJson: JSON.stringify({ team: S.team || "", teamCode: S.esc.team, solo: !!S.solo, mode: S.mode, role: S.esc.role, help: S.esc.help, score: sc, escaped: escaped, elapsedSec: sec, hints: S.esc.hints, start: S.esc.start, escapedAt: S.esc.escapedAt, attempts: S.esc.attempts, ts: new Date().toISOString() })
+    reflection: (escaped ? "탈출 " : "진행 ") + Logic.fmtElapsed(sec) + " · " + curEscCode() + " · 담당 " + (S.esc.role + 1) + "실 · 점수 " + sc.score + " · 힌트 " + S.esc.hints + "회 · 시도 " + tries,
+    choicesJson: JSON.stringify({ team: S.team || "", teamCode: curEscCode(), solo: !!S.solo, mode: S.mode, role: S.esc.role, help: S.esc.help, score: sc, escaped: escaped, elapsedSec: sec, hints: S.esc.hints, start: S.esc.start, escapedAt: S.esc.escapedAt, attempts: S.esc.attempts, ts: new Date().toISOString() })
   };
   Object.assign(payload, FocusGuard.payload());
   S.sending = true; if (btn) { btn.disabled = true; btn.textContent = "보내는 중…"; }
@@ -894,6 +895,7 @@ function renderBoard() {
   const game = kind === "escape" ? CONFIG.GAME_ESCAPE : CONFIG.GAME_DIG;
   const rows = Logic.parsePasted($("bPaste").value, T.ban, game, GAME_NAMES, TEAMS);
   const stray = Object.keys(rows).filter((no) => !teams.assign[no]);
+  if (!Object.keys(rows).length) { $("bOut").innerHTML = '<p class="muted">제출 행을 붙여 넣으면 팀별 평균·순위 포인트가 나와. (학번과 «점수 n»이 든 줄만 읽어.)</p>'; try { localStorage.removeItem(tKey("result:" + kind, T.ban)); } catch (e) { /* 무시 */ } return; }
   const res = Logic.teamResults(teams.assign, absent, rows, kind, TEAMS, SCORING);
   if (Object.keys(rows).length) tSave("result:" + kind, T.ban, res); else { try { localStorage.removeItem(tKey("result:" + kind, T.ban)); } catch (e) { /* 무시 */ } } // 붙여 넣기 전 빈 결과가 합계에 섞이지 않게
   const other = tLoad("result:" + (kind === "escape" ? "dig" : "escape"), T.ban);
@@ -964,7 +966,7 @@ function init() {
   S.solo = q.get("solo") === "1";
   if (S.preview) $("previewBar").hidden = false;
 
-  $("brandBtn").addEventListener("click", () => { renderHome(); show("scrHome"); });
+  $("brandBtn").addEventListener("click", () => { if (document.body.classList.contains("teacher")) return; renderHome(); show("scrHome"); }); // 교사 화면에서는 학생 흐름을 열지 않는다
   $("goDig").addEventListener("click", startDig);
   $("goEscape").addEventListener("click", renderEscapeEntry);
   $("startEscape").addEventListener("click", startEscape);

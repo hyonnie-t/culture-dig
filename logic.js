@@ -59,7 +59,7 @@
   function parseNumbers(text) {
     var out = {};
     String(text || "").split(/[,\s]+/).forEach(function (tok) {
-      var m = tok.match(/^(\d{1,2})(?:[-~](\d{1,2}))?$/);
+      var m = tok.match(/^(\d{1,2})(?:[-~–](\d{1,2}))?$/);
       if (!m) return;
       var a = Number(m[1]), b = m[2] ? Number(m[2]) : a;
       if (a > b) { var t = a; a = b; b = t; }
@@ -96,7 +96,7 @@
   }
 
   /* 균형 팀 뽑기: nos = 번호 목록, prefs = { 번호: [1지망, 2지망, …] }(없으면 지망 없음).
-   * 팀 인원 차이는 최대 1명. 그 안에서 지망 비용 합이 가장 작은(=1지망을 가장 많이 살린) 배정, 같으면 시드로 랜덤.
+   * 팀 인원 차이는 최대 1명. 그 안에서 1지망을 가장 많이 살리고, 그다음 2지망·3지망 순으로 살리는 배정(사전식), 같으면 시드로 랜덤.
    * 돌려주는 값: { assign: {번호: 팀}, sizes: {팀: 수}, first: 1지망 반영 수, second: 2지망 반영 수, withPref: 테스트 낸 수 } */
   function drawTeams(nos, prefs, TEAMS, seedStr) {
     var rnd = seeded("draw:" + seedStr);
@@ -113,7 +113,8 @@
       var p = prefs && prefs[no];
       if (!p || !p.length) return 0;
       var r = p.indexOf(teamId);
-      return r < 0 ? 9 : r * r; // 제곱: 4지망 하나보다 2지망 둘이 낫게
+      if (r === 0) return 0;
+      return 100 + (r < 0 ? 3 : r); // 1지망이 아니면 크게(100): 1지망 수가 최우선, 그 안에서 2지망 > 3지망 > 4지망 (인원 40명 이하라 100이면 충분)
     }
     var best = null;
     combos.forEach(function (cb) {
@@ -184,10 +185,13 @@
       if (ban && Number(m[1]) !== Number(ban)) return;
       if (game && gameNames.some(function (g) { return line.indexOf(g) >= 0; }) && line.indexOf(game) < 0) return;
       var no = Number(m[2]);
-      var rec = { score: 0, escaped: /탈출함/.test(line), prefs: null };
-      var s = line.match(/점수\s*(\d+(?:\.\d+)?)/); if (s) rec.score = Number(s[1]);
+      var s = line.match(/점수\s*(\d+(?:\.\d+)?)/);
       var pr = line.match(/지망\s*([^\s·\/|]+)/);
-      if (pr) { var arr = pr[1].split(">").filter(function (x) { return teamIds.indexOf(x) >= 0; }); if (arr.length) rec.prefs = arr; }
+      var arr = pr ? pr[1].split(">").filter(function (x) { return teamIds.indexOf(x) >= 0; }) : [];
+      if (!s && !arr.length) return; // «점수 n»도 «지망 …»도 없는 줄은 제출로 세지 않는다
+      var rec = out[no] || { score: 0, escaped: false, prefs: null };
+      if (s) { rec.score = Number(s[1]); rec.escaped = /탈출함/.test(line); } // 같은 학번은 아래 줄이 이긴다(그 줄에 있는 값만 덮음)
+      if (arr.length) rec.prefs = arr;
       out[no] = rec;
     });
     return out;
@@ -262,7 +266,7 @@
     return m + "분 " + (s < 10 ? "0" : "") + s + "초";
   }
 
-  /* 모둠 코드: 반·팀을 담는다. 예) 3-5-청룡. 개인(solo)은 학번에 (개인)을 붙인다. */
+  /* 모둠 코드: 반·팀을 담는다. 예) 3-5-곡괭이. 개인(solo)은 학번에 (개인)을 붙인다. */
   function teamCode(ban, teamName) {
     return "3-" + String(ban || "?") + "-" + String(teamName || "").replace(/\s+/g, "");
   }
