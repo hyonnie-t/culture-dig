@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261103d">
+<link rel="stylesheet" href="style.css?v=20261103e">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -169,32 +169,6 @@
     </div>
   </section>
 
-  <!-- 교사: 팀 뽑기 -->
-  <section id="scrTeams" class="scr" hidden>
-    <div class="card">
-      <h2>👩‍🏫 팀 뽑기 (교사용)</h2>
-      <p class="muted">번호 목록과 성향 테스트 결과는 이 기기 브라우저에만 남고 서버로 가지 않아.</p>
-      <label>반 <select id="tBan"></select></label>
-      <label>이 반 번호 (예: 1-13, 21-34)<textarea id="tNos" rows="2"></textarea></label>
-      <label>성향 테스트 결과 붙여 넣기 — 시트에서 «문화사_팀테스트» 행을 복사(학번과 «지망 …» 칸이 들어가게). 비우면 지망 없이 랜덤.<textarea id="tPaste" rows="4"></textarea></label>
-      <p class="err" id="tErr"></p>
-      <div class="team-actions"><button type="button" class="btn primary" id="tDraw">🎲 뽑기 (다시 뽑기)</button><button type="button" class="btn" id="tConfirm" disabled>✅ 확정</button></div>
-      <p class="muted" id="tStatus"></p>
-    </div>
-    <div id="tResult"></div>
-  </section>
-
-  <!-- 교사: 결산판 -->
-  <section id="scrBoard" class="scr" hidden>
-    <div class="card">
-      <h2>🏆 결산판 (교사용)</h2>
-      <div class="row2"><label>반 <select id="bBan"></select></label><label>활동 <select id="bKind"><option value="dig">1차시 유물 발굴</option><option value="escape">2차시 박물관 방탈출</option></select></label></div>
-      <label>제출 행 붙여 넣기 — 대시보드나 시트에서 그 활동 행을 복사(학번과 «점수 n» 칸이 들어가게). 같은 학번은 아래 줄이 쓰여.<textarea id="bPaste" rows="5"></textarea></label>
-      <h3>결석 (누르면 빠짐)</h3>
-      <div id="bAbsent"></div>
-    </div>
-    <div class="card" id="bOut"></div>
-  </section>
 </main>
 
 <!-- 사진 확대(라이트박스) -->
@@ -205,12 +179,12 @@
 
 <footer class="foot muted">비상교육 중등 역사② 기준 · 사진은 공공누리 제1유형(출처 표시)<a href="#" id="modeLink" hidden></a></footer>
 
-<script src="focus_guard.js?v=20261103d"></script>
-<script src="draft_guard.js?v=20261103d"></script>
-<script src="glossary.js?v=20261103d"></script>
-<script src="data.js?v=20261103d"></script>
-<script src="pixels.js?v=20261103d"></script>
-<script src="logic.js?v=20261103d"></script>
-<script src="app.js?v=20261103d"></script>
+<script src="focus_guard.js?v=20261103e"></script>
+<script src="draft_guard.js?v=20261103e"></script>
+<script src="glossary.js?v=20261103e"></script>
+<script src="data.js?v=20261103e"></script>
+<script src="pixels.js?v=20261103e"></script>
+<script src="logic.js?v=20261103e"></script>
+<script src="app.js?v=20261103e"></script>
 </body>
 </html>

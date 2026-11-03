@@ -350,22 +350,3 @@ textarea{resize:vertical;min-height:5.5rem}
 .vo-room{background:rgba(255,255,255,.12);border:2px solid var(--brass);padding:.1rem .45rem}
 details.rules summary{cursor:pointer;min-height:2.75rem;display:flex;align-items:center}
 details.rules ol{margin:.4rem 0 0;padding-left:1.3rem}
-/* 교사 화면: 칠판(전자칠판)에 띄우는 표 */
-body.teacher .wrap{max-width:72rem}
-textarea{width:100%;box-sizing:border-box;border:2px solid var(--line);border-radius:4px;padding:.5rem;background:#fff}
-#scrTeams label,#scrBoard label{display:block;margin:.5rem 0}
-.board-teams{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem}
-@media (min-width:1100px){.board-teams{grid-template-columns:repeat(4,1fr)}}
-.bt-col{background:#fff;border:4px solid var(--tc,var(--line));border-radius:4px;box-shadow:3px 3px 0 var(--stone-deep)}
-.bt-head{background:var(--tc,var(--wood));color:#fff;font-family:var(--pixel);font-size:1.6rem;padding:.4rem .6rem;display:flex;justify-content:space-between;align-items:baseline;gap:.4rem;flex-wrap:wrap}
-.bt-head small{font-size:1rem;font-family:var(--sans)}
-.bt-nos{display:flex;flex-wrap:wrap;gap:.35rem;padding:.6rem}
-.bt-nos span{font-family:var(--pixel);font-size:1.7rem;min-width:2.6rem;text-align:center;background:var(--stone);border-radius:3px;padding:.1rem .3rem}
-.ab-row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.3rem 0}
-.ab-team{min-width:6rem;font-weight:700}
-.ab-chip{min-width:2.9rem;min-height:2.75rem}
-.ab-chip.off{background:var(--stone-deep);color:#fff;text-decoration:line-through}
-.board-table{width:100%;border-collapse:collapse;font-size:1.1rem}
-.board-table th,.board-table td{border-bottom:1px solid var(--line);padding:.45rem .4rem;text-align:center}
-.board-table th{background:var(--wood-wash)}
-#bOut{overflow-x:auto}

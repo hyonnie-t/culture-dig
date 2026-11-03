@@ -42,6 +42,8 @@
     return shuffle([art.name].concat(ds), seeded(seedStr + ":" + art.id));
   }
 
+  /* drawTeams·teamResults·rankPoints·parseNumbers는 history26 대시보드 «🏺 문화사 팀» 탭(js/09-dash-culture.js)이 이 파일을 불러 쓴다(v142).
+   * 이름·인자를 바꾸면 대시보드도 같이 고친다. */
   /* 성향 테스트 → 1~4지망. answers = 문항별로 고른 보기 인덱스. 많이 고른 팀이 앞, 동점은 시드(학번)로 섞는다. */
   function quizRanking(answers, QUIZ, TEAMS, seedStr) {
     var tally = {};
@@ -174,29 +176,6 @@
     return res;
   }
 
-  /* 붙여 넣은 시트·대시보드 행 → {번호: {score, escaped, prefs}}. 한 줄에 학번(3+반2+번호2)이 있어야 한다.
-   * ban을 주면 그 반만. game을 주면 그 활동 이름이 든 줄만(줄에 아는 활동 이름이 하나도 없으면 거르지 않음). 같은 학번은 아래 줄이 이긴다. */
-  function parsePasted(text, ban, game, gameNames, TEAMS) {
-    var out = {};
-    var teamIds = TEAMS.map(function (t) { return t.id; });
-    String(text || "").split(/\r?\n/).forEach(function (line) {
-      var m = line.match(/(?:^|[^0-9])3(\d{2})(\d{2})(?![0-9])/);
-      if (!m) return;
-      if (ban && Number(m[1]) !== Number(ban)) return;
-      if (game && gameNames.some(function (g) { return line.indexOf(g) >= 0; }) && line.indexOf(game) < 0) return;
-      var no = Number(m[2]);
-      var s = line.match(/점수\s*(\d+(?:\.\d+)?)/);
-      var pr = line.match(/지망\s*([^\s·\/|]+)/);
-      var arr = pr ? pr[1].split(">").filter(function (x) { return teamIds.indexOf(x) >= 0; }) : [];
-      if (!s && !arr.length) return; // «점수 n»도 «지망 …»도 없는 줄은 제출로 세지 않는다
-      var rec = out[no] || { score: 0, escaped: false, prefs: null };
-      if (s) { rec.score = Number(s[1]); rec.escaped = /탈출함/.test(line); } // 같은 학번은 아래 줄이 이긴다(그 줄에 있는 값만 덮음)
-      if (arr.length) rec.prefs = arr;
-      out[no] = rec;
-    });
-    return out;
-  }
-
   /* 수장고 번호 순서: 팀마다 전시실 순서가 다르다(다른 팀 번호를 받아 적어도 안 열리게). 기본 순서를 팀 번호만큼 돌린다.
    * teamIdx < 0(개인용·팀 없음)이면 1→2→3…. 돌려주는 값은 전시실 인덱스 배열. */
   function vaultOrder(teamIdx, roomCount) {
@@ -278,7 +257,7 @@
   root.Logic = {
     seeded: seeded, shuffle: shuffle, layersFor: layersFor, roomsFor: roomsFor, artifactsOf: artifactsOf,
     blockLayout: blockLayout, nameChoices: nameChoices, quizRanking: quizRanking, parseNumbers: parseNumbers, drawTeams: drawTeams,
-    rankPoints: rankPoints, teamResults: teamResults, parsePasted: parsePasted, vaultOrder: vaultOrder, escScore: escScore,
+    rankPoints: rankPoints, teamResults: teamResults, vaultOrder: vaultOrder, escScore: escScore,
     checkMatch: checkMatch, checkOrder: checkOrder, checkChoice: checkChoice, checkKey: checkKey,
     vaultCode: vaultCode, digScore: digScore, fmtElapsed: fmtElapsed, teamCode: teamCode, soloCode: soloCode, countChars: countChars
   };

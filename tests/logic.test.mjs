@@ -153,27 +153,6 @@ test("팀 결산: 평균 분모는 출석자 전원(미제출 0점), 결석은 �
   assert.equal(noSubmit.곡괭이.bonus, 5); // 발굴엔 전원 탈출 보너스 없음
 });
 
-test("붙여 넣기 읽기: 학번·점수·탈출·지망, 반·활동 거르기, 같은 학번은 아래 줄", () => {
-  const G = ["문화사_유물발굴", "문화사_박물관방탈출", "문화사_팀테스트"];
-  const text = [
-    "2026. 11. 5\t30512\t홍길동\t문화사_유물발굴\t점수 20 · 붓 · 발굴 6",
-    "2026. 11. 5\t30512\t홍길동\t문화사_유물발굴\t점수 25 · 붓 · 발굴 7",
-    "2026. 11. 5\t30603\t김\t문화사_유물발굴\t점수 30",
-    "2026. 11. 5\t30501\t이\t문화사_박물관방탈출\t점수 18 · 탈출함",
-    "30507 문화사_팀테스트 지망 곡괭이>붓>돋보기>나침반"
-  ].join("\n");
-  const dig = Logic.parsePasted(text, 5, "문화사_유물발굴", G, TEAMS);
-  assert.equal(Object.keys(dig).join(), "12"); assert.equal(dig[12].score, 25);
-  const escp = Logic.parsePasted(text, 5, "문화사_박물관방탈출", G, TEAMS);
-  assert.equal(escp[1].escaped, true); assert.equal(escp[1].score, 18);
-  const quiz = Logic.parsePasted(text, 5, "문화사_팀테스트", G, TEAMS);
-  assert.equal(quiz[7].prefs.join(), "곡괭이,붓,돋보기,나침반");
-  assert.equal(Object.keys(Logic.parsePasted("30512 점수 3", 5, "문화사_유물발굴", G, TEAMS)).length, 1, "활동 이름 없는 줄은 거르지 않음");
-  assert.equal(Object.keys(Logic.parsePasted("30512 홍길동 그냥 메모", 5, "문화사_유물발굴", G, TEAMS)).length, 0, "점수·지망 없는 줄은 제출로 안 셈");
-  const keep = Logic.parsePasted("30512 지망 붓>곡괭이\n30512 점수 30 · 붓", 5, "", G, TEAMS);
-  assert.equal(keep[12].prefs.join(), "붓,곡괭이", "아래 줄이 지망을 지우지 않음"); assert.equal(keep[12].score, 30);
-});
-
 test("수장고 순서: 팀마다 다르고, 개인용은 1번부터", () => {
   const rooms = Logic.roomsFor("basic", ROOMS);
   const codes = TEAMS.map((t, i) => Logic.vaultCode(rooms, Logic.vaultOrder(i, rooms.length)));
