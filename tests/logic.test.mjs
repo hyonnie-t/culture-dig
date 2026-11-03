@@ -11,15 +11,15 @@ const ctx = { window: undefined, globalThis: undefined };
 ctx.globalThis = ctx;
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(here, "..", "data.js"), "utf8") +
-  "\nthis.ERAS=ERAS;this.LAYERS=LAYERS;this.ARTIFACTS=ARTIFACTS;this.ROOMS=ROOMS;this.VAULT=VAULT;this.WRITING=WRITING;this.GLOSSARY=GLOSSARY;this.TEAMS=TEAMS;this.QUIZ=QUIZ;this.PIXEL_ICONS=PIXEL_ICONS;this.PIXEL_FOR=PIXEL_FOR;this.PIXEL_PALETTE=PIXEL_PALETTE;this.BLOCKS_PER_LAYER=BLOCKS_PER_LAYER;this.DIG_ORDER=DIG_ORDER;", ctx);
+  "\nthis.ERAS=ERAS;this.LAYERS=LAYERS;this.ARTIFACTS=ARTIFACTS;this.ROOMS=ROOMS;this.VAULT=VAULT;this.WRITING=WRITING;this.GLOSSARY=GLOSSARY;this.TEAMS=TEAMS;this.QUIZ=QUIZ;this.BLOCKS_PER_LAYER=BLOCKS_PER_LAYER;this.DIG_ORDER=DIG_ORDER;this.SCORING=SCORING;", ctx);
 vm.runInContext(fs.readFileSync(path.join(here, "..", "logic.js"), "utf8"), ctx);
-const { Logic, ERAS, LAYERS, ARTIFACTS, ROOMS, VAULT, WRITING, GLOSSARY, TEAMS, QUIZ, PIXEL_ICONS, PIXEL_FOR, PIXEL_PALETTE, BLOCKS_PER_LAYER, DIG_ORDER } = ctx;
+const { Logic, ERAS, LAYERS, ARTIFACTS, ROOMS, VAULT, WRITING, GLOSSARY, TEAMS, QUIZ, BLOCKS_PER_LAYER, DIG_ORDER, SCORING } = ctx;
 
 test("모드별 지층·전시실 수, 파는 순서", () => {
   assert.equal(Logic.layersFor("basic", LAYERS).join(), "goryeo,joseon");
   assert.equal(Logic.layersFor("flex", LAYERS).join(), "samguk,goryeo,joseon");
   assert.equal(Logic.layersFor("flex", LAYERS, "top-down").join(), "joseon,goryeo,samguk");
-  assert.ok(DIG_ORDER === "bottom-up" || DIG_ORDER === "top-down");
+  assert.equal(DIG_ORDER, "top-down"); // 효니 확정 2026-11-03: 표토부터
   assert.equal(Logic.roomsFor("basic", ROOMS).length, 4);
   assert.equal(Logic.roomsFor("flex", ROOMS).length, 5);
 });
@@ -64,23 +64,119 @@ test("이름 보기는 층에서 먼저 캔 2개가 2지선다, 그다음 4지�
   assert.ok(c1.includes(arts[3].name));
 });
 
-test("성향 테스트: 4문항 × 보기 4개가 팀 하나씩, 최다 득표, 동점은 번호로", () => {
+test("성향 테스트: 4문항 × 보기 4개가 팀 하나씩, 많이 고른 순서가 지망, 동점은 시드로", () => {
   assert.equal(QUIZ.length, 4);
-  assert.equal(TEAMS.map(t => t.id).join(), "청룡,백호,주작,현무");
+  assert.equal(TEAMS.map(t => t.id).join(), "붓,곡괭이,돋보기,나침반");
   for (const q of QUIZ) {
     assert.equal(q.options.length, 4);
     assert.equal(new Set(q.options.map(o => o.t)).size, 4, "보기마다 다른 팀");
     for (const o of q.options) assert.ok(TEAMS.some(t => t.id === o.t), o.t);
   }
-  const allDragon = QUIZ.map(q => q.options.findIndex(o => o.t === "청룡"));
-  assert.equal(Logic.assignTeam(allDragon, QUIZ, TEAMS, 7).team, "청룡");
-  // 2:2 동점 — 번호로 가른다(번호-1을 동점 팀 수로 나눈 나머지)
-  const half = QUIZ.map((q, i) => q.options.findIndex(o => o.t === (i < 2 ? "백호" : "현무")));
-  const r1 = Logic.assignTeam(half, QUIZ, TEAMS, 1), r2 = Logic.assignTeam(half, QUIZ, TEAMS, 2);
-  assert.equal(r1.tied.join(), "백호,현무");
-  assert.equal(r1.team, "백호"); assert.equal(r2.team, "현무");
-  // 보기 순서가 문항마다 달라 «①은 늘 같은 팀»이 아니다
+  const allPick = QUIZ.map(q => q.options.findIndex(o => o.t === "곡괭이"));
+  const r = Logic.quizRanking(allPick, QUIZ, TEAMS, "30507");
+  assert.equal(r.ranking[0], "곡괭이"); assert.equal(r.ranking.length, 4); assert.equal(r.tally["곡괭이"], 4);
+  const half = QUIZ.map((q, i) => q.options.findIndex(o => o.t === (i < 2 ? "붓" : "돋보기")));
+  const h1 = Logic.quizRanking(half, QUIZ, TEAMS, "30501");
+  assert.equal(h1.ranking.slice(0, 2).sort().join(), "돋보기,붓");
+  assert.equal(h1.ranking.join(), Logic.quizRanking(half, QUIZ, TEAMS, "30501").ranking.join(), "같은 학번이면 같은 결과");
   assert.ok(new Set(QUIZ.map(q => q.options[0].t)).size > 1);
+});
+
+test("번호 목록 읽기", () => {
+  assert.equal(Logic.parseNumbers("1-3, 21~22 25 3").join(), "1,2,3,21,22,25");
+  assert.equal(Logic.parseNumbers("x, 0, 100").length, 0);
+});
+
+test("팀 뽑기: 인원 차이 최대 1명, 지망을 살리고, 같은 시드면 같은 결과", () => {
+  const ids = TEAMS.map(t => t.id);
+  for (const n of [0, 1, 7, 25, 26, 27, 28, 33]) {
+    const nos = Array.from({ length: n }, (_, i) => i + 1);
+    const d = Logic.drawTeams(nos, {}, TEAMS, "5반");
+    const sizes = ids.map(id => d.sizes[id]);
+    assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1, n + "명 " + sizes);
+    assert.equal(Object.keys(d.assign).length, n);
+  }
+  // 모두 1지망이 «붓»이어도 7명만 붓(균등 우선), 2지망이 고르게 흩어져 있으면 나머지는 2지망
+  const nos = Array.from({ length: 28 }, (_, i) => i + 1);
+  const prefs = {};
+  nos.forEach((no, i) => { prefs[no] = ["붓", ids[1 + (i % 3)], ...ids.filter(x => x !== "붓" && x !== ids[1 + (i % 3)])]; });
+  const d = Logic.drawTeams(nos, prefs, TEAMS, "6반");
+  assert.equal(d.sizes["붓"], 7);
+  assert.equal(d.first, 7); assert.equal(d.second, 21); assert.equal(d.withPref, 28);
+  assert.deepEqual(d.assign, Logic.drawTeams(nos, prefs, TEAMS, "6반").assign);
+  // 지망이 고르게 나뉘면 전원 1지망
+  const even = {}; nos.forEach((no, i) => { even[no] = [ids[i % 4]]; });
+  assert.equal(Logic.drawTeams(nos, even, TEAMS, "7반").first, 28);
+  // 시드가 다르면 (대개) 다르게 섞인다
+  assert.notDeepEqual(Logic.drawTeams(nos, {}, TEAMS, "a").assign, Logic.drawTeams(nos, {}, TEAMS, "b").assign);
+});
+
+test("순위 포인트: 동점은 같은 순위, 다음 순위 건너뜀", () => {
+  const P = SCORING.RANK_POINTS;
+  const r = Logic.rankPoints({ 붓: 10, 곡괭이: 10, 돋보기: 8, 나침반: 3 }, P);
+  assert.deepEqual([r.붓.points, r.곡괭이.points, r.돋보기.points, r.나침반.points], [40, 40, 20, 10]);
+  assert.equal(r.돋보기.rank, 3);
+  const all = Logic.rankPoints({ 붓: 5, 곡괭이: 5, 돋보기: 5, 나침반: 5 }, P);
+  assert.ok(Object.values(all).every(x => x.points === 40));
+});
+
+test("팀 결산: 평균 분모는 출석자 전원(미제출 0점), 결석은 뺌, 보너스", () => {
+  const teams = { 1: "붓", 2: "붓", 3: "붓", 4: "곡괭이", 5: "곡괭이", 6: "돋보기", 7: "나침반" };
+  const rows = { 1: { score: 20, escaped: true }, 2: { score: 10, escaped: true }, 4: { score: 18, escaped: true }, 5: { score: 12, escaped: false }, 6: { score: 9, escaped: true } };
+  const res = Logic.teamResults(teams, [3, 7], rows, "escape", TEAMS, SCORING);
+  assert.equal(res.붓.present, 2); assert.equal(res.붓.avg, 15); // 3번 결석 → 분모 2
+  assert.equal(res.붓.bonus, 10); // 전원 제출 + 전원 탈출
+  assert.equal(res.곡괭이.avg, 15); assert.equal(res.곡괭이.bonus, 5); // 탈출 못 한 사람 있음
+  assert.equal(res.붓.points, 40); assert.equal(res.곡괭이.points, 40); assert.equal(res.돋보기.points, 20);
+  assert.equal(res.나침반.present, 0); assert.equal(res.나침반.bonus, 0); assert.equal(res.나침반.points, 10); // 출석 0명 → 평균 0 → 4위
+  const noSubmit = Logic.teamResults(teams, [7], rows, "dig", TEAMS, SCORING);
+  assert.equal(noSubmit.붓.avg, 10); // 3번 출석·미제출 → 0점으로 분모에 들어감
+  assert.equal(noSubmit.붓.bonus, 0);
+  assert.equal(noSubmit.곡괭이.bonus, 5); // 발굴엔 전원 탈출 보너스 없음
+});
+
+test("붙여 넣기 읽기: 학번·점수·탈출·지망, 반·활동 거르기, 같은 학번은 아래 줄", () => {
+  const G = ["문화사_유물발굴", "문화사_박물관방탈출", "문화사_팀테스트"];
+  const text = [
+    "2026. 11. 5\t30512\t홍길동\t문화사_유물발굴\t점수 20 · 붓 · 발굴 6",
+    "2026. 11. 5\t30512\t홍길동\t문화사_유물발굴\t점수 25 · 붓 · 발굴 7",
+    "2026. 11. 5\t30603\t김\t문화사_유물발굴\t점수 30",
+    "2026. 11. 5\t30501\t이\t문화사_박물관방탈출\t점수 18 · 탈출함",
+    "30507 문화사_팀테스트 지망 곡괭이>붓>돋보기>나침반"
+  ].join("\n");
+  const dig = Logic.parsePasted(text, 5, "문화사_유물발굴", G, TEAMS);
+  assert.equal(Object.keys(dig).join(), "12"); assert.equal(dig[12].score, 25);
+  const escp = Logic.parsePasted(text, 5, "문화사_박물관방탈출", G, TEAMS);
+  assert.equal(escp[1].escaped, true); assert.equal(escp[1].score, 18);
+  const quiz = Logic.parsePasted(text, 5, "문화사_팀테스트", G, TEAMS);
+  assert.equal(quiz[7].prefs.join(), "곡괭이,붓,돋보기,나침반");
+  assert.equal(Object.keys(Logic.parsePasted("30512 점수 3", 5, "문화사_유물발굴", G, TEAMS)).length, 1, "활동 이름 없는 줄은 거르지 않음");
+});
+
+test("수장고 순서: 팀마다 다르고, 개인용은 1번부터", () => {
+  const rooms = Logic.roomsFor("basic", ROOMS);
+  const codes = TEAMS.map((t, i) => Logic.vaultCode(rooms, Logic.vaultOrder(i, rooms.length)));
+  assert.equal(new Set(codes).size, 4, codes.join());
+  assert.ok(codes.every(c => c.length === 4 && c.split("").sort().join() === "8593".split("").sort().join()));
+  assert.equal(Logic.vaultCode(rooms, Logic.vaultOrder(-1, rooms.length)), "8593");
+  const flex = Logic.roomsFor("flex", ROOMS);
+  const fcodes = TEAMS.map((t, i) => Logic.vaultCode(flex, Logic.vaultOrder(i, 5)));
+  assert.equal(new Set(fcodes).size, 4);
+  for (let i = 0; i < 4; i++) assert.equal(new Set(Logic.vaultOrder(i, 5)).size, 5);
+});
+
+test("방탈출 개인 점수: 담당 방 12 + 수장고 3 + 자물쇠 3 + 도움 2 = 최대 20", () => {
+  const rooms = Logic.roomsFor("basic", ROOMS);
+  const solved = {}, attempts = {};
+  rooms[1].puzzles.forEach(p => { solved[p.id] = true; attempts[p.id] = { tries: 1, hint: false }; });
+  rooms[2].puzzles.forEach(p => { solved[p.id] = true; });
+  const full = Logic.escScore({ role: 1, solved, attempts, vaultCode: true, escapedAt: 1 }, rooms, SCORING);
+  assert.equal(full.score, 20);
+  attempts[rooms[1].puzzles[0].id] = { tries: 2, hint: false };
+  attempts[rooms[1].puzzles[1].id] = { tries: 1, hint: true };
+  const part = Logic.escScore({ role: 1, solved, attempts, vaultCode: false, escapedAt: 0 }, rooms, SCORING);
+  assert.equal(part.role, 3 + 3 + 1 + 1); assert.equal(part.help, 2); assert.equal(part.score, 10);
+  assert.equal(Logic.escScore({ role: 0, solved: {}, attempts: {} }, rooms, SCORING).score, 0);
 });
 
 test("전시실 퍼즐: 유형별 필드와 열쇠 숫자가 한 자리, 금고 번호", () => {
@@ -141,7 +237,10 @@ test("학생 화면 문자열에 검증 라벨·옛 기숙사 이름이 없다",
   for (const bad of ["검수", "원문 대조", "대조 전", "미확인", "[2차]", "(2차)", "확인 전", "기숙사", "청자단", "활자단", "앙부단", "사군자단"]) assert.ok(!src.includes(bad), bad);
 });
 
-test("사진·도트 아이콘: 사진이 있으면 출처·공공누리 1유형, 없으면 도트 아이콘이 있다", () => {
+test("사진·도트 그림: 사진이 있으면 출처·공공누리 1유형, 모든 유물에 고유한 32×32 도트 그림", () => {
+  const px = { };
+  vm.createContext(px);
+  vm.runInContext(fs.readFileSync(path.join(here, "..", "pixels.js"), "utf8") + "\nthis.A=PIXEL_ART32;this.P=PIXEL_PAL32;", px);
   for (const a of ARTIFACTS) {
     if (a.photo) {
       assert.ok(a.photo.src && a.photo.src.startsWith("img/"), a.id + " 사진 경로");
@@ -150,14 +249,13 @@ test("사진·도트 아이콘: 사진이 있으면 출처·공공누리 1유형
       assert.ok(fs.existsSync(path.join(here, "..", a.photo.src)), a.id + " 파일 있음");
       assert.ok(fs.statSync(path.join(here, "..", a.photo.src)).size <= 300 * 1024, a.id + " 300KB 이하");
     }
-    const icon = PIXEL_ICONS[PIXEL_FOR[a.id] || "vase"];
-    assert.ok(icon, a.id + " 도트 아이콘");
+    const rows = px.A[a.id];
+    assert.ok(rows, a.id + " 도트 그림");
+    assert.equal(rows.length, 32, a.id);
+    for (const r of rows) { assert.equal(r.length, 32, a.id); for (const ch of r) assert.ok(ch === "." || px.P[ch], a.id + " 색 " + ch); }
   }
-  for (const k of Object.keys(PIXEL_ICONS)) {
-    const rows = PIXEL_ICONS[k];
-    assert.equal(rows.length, 12, k);
-    for (const r of rows) { assert.equal(r.length, 12, k); for (const ch of r) assert.ok(ch === "." || PIXEL_PALETTE[ch], k + " 색 " + ch); }
-  }
+  const all = ARTIFACTS.map(a => px.A[a.id].join(""));
+  assert.equal(new Set(all).size, ARTIFACTS.length, "유물마다 다른 그림");
 });
 
 test("팀 4개, 어휘 사전은 비어 있지 않다", () => {

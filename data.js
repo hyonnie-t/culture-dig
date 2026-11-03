@@ -11,47 +11,58 @@ const ERAS = {
   joseon: { name: "조선 전기", short: "조선 전기", color: "era-joseon" }
 };
 
-/* 팀 4개 — 사신도(교과서 40~41쪽 고구려 고분 벽화의 네 방위 신). ⓒ survive-eras·ⓑ 수능 던전과 같은 이름이라 9차시 내내 한 팀.
- * 1차시 앞에서 «발굴단 성향 테스트»(QUIZ) 4문항으로 자동 배정한다. id가 그대로 시트 조번호(groupId)와 choicesJson.house에 들어간다. */
+/* 팀 4개 — 발굴 도구(2026-11-03 효니 확정, 3판). ⓑ 수능 던전 팀(성적 균형 배정)과 따로인 문화사 전용 팀이다.
+ * 1차시 첫 2분 «발굴단 성향 테스트»(QUIZ)로 1~4지망을 받고, 교사 화면 «팀 뽑기»(?screen=teams)가 인원을 고르게(차이 최대 1명) 나누며 1지망을 최대한 살린다.
+ * 테스트 결과는 팀 이름이 아니라 성향(type)으로만 보여 준다(배정 팀과 달라도 «왜 나는 1지망 아니야»가 안 보이게).
+ * 학생은 칠판에 뜬 표를 보고 자기 팀을 고른다. id가 그대로 시트 조번호(groupId «3-반-팀»)와 choicesJson.team에 들어간다. */
 const TEAMS = [
-  { id: "청룡", emoji: "🐉", dir: "동쪽을 지키는 용", trait: "한번 잡으면 끝까지 캐는 끈기" },
-  { id: "백호", emoji: "🐯", dir: "서쪽을 지키는 호랑이", trait: "빠르게 정하고 바로 움직이는 힘" },
-  { id: "주작", emoji: "🔥", dir: "남쪽을 지키는 새", trait: "모둠을 끌어 모으고 분위기를 띄우는 열정" },
-  { id: "현무", emoji: "🐢", dir: "북쪽을 지키는 거북", trait: "꼼꼼히 살피고 단서를 모으는 신중함" }
+  { id: "붓", emoji: "🖌️", type: "섬세형", tool: "흙을 살살 걷어 내는 붓", trait: "작은 것도 섬세하게 다듬는 손끝" },
+  { id: "곡괭이", emoji: "⛏️", type: "끈기형", tool: "단단한 땅을 깨는 곡괭이", trait: "한번 잡으면 끝까지 파는 끈기" },
+  { id: "돋보기", emoji: "🔍", type: "탐구형", tool: "작은 무늬까지 보는 돋보기", trait: "근거와 단서를 따져 보는 눈" },
+  { id: "나침반", emoji: "🧭", type: "이끄는형", tool: "갈 길을 알려 주는 나침반", trait: "친구들을 모아 방향을 잡는 힘" }
 ];
 
-/* 발굴단 성향 테스트 — 4문항, 보기 4개가 팀 하나씩(t). 최다 득표 팀, 동점이면 학번 번호로 가른다(logic.assignTeam).
- * 점수나 정답이 없는 성향 질문이라 틀릴 수 없다. 보기 순서는 문항마다 다르게 섞어 두어 «①은 늘 청룡»이 되지 않게 했다. */
+/* 발굴단 성향 테스트 — 4문항, 보기 4개가 팀 하나씩(t). 많이 고른 순서가 1~4지망(Logic.quizRanking, 동점은 학번 시드로 섞음).
+ * 정답이 없는 성향 질문이다. 보기 순서는 학생마다 섞여 보인다. */
 const QUIZ = [
   { q: "발굴 현장에 도착했다. 삽을 들고 제일 먼저 하는 일은?",
     options: [
-      { t: "백호", text: "제일 큰 흙더미부터 바로 판다." },
-      { t: "현무", text: "지층 단면을 한참 들여다보며 어디를 팔지 고른다." },
-      { t: "주작", text: "같이 온 친구들한테 «여기 같이 파자!» 하고 부른다." },
-      { t: "청룡", text: "한 자리를 정해 끝이 보일 때까지 판다." }
+      { t: "붓", text: "흙을 살살 걷어 내며 주변부터 깨끗이 정리한다." },
+      { t: "돋보기", text: "지층 단면을 한참 들여다보며 어디를 팔지 고른다." },
+      { t: "나침반", text: "같이 온 친구들한테 «여기 같이 파자!» 하고 부른다." },
+      { t: "곡괭이", text: "한 자리를 정해 끝이 보일 때까지 판다." }
     ] },
   { q: "흙 속에서 이상한 조각이 나왔다. 너는?",
     options: [
-      { t: "현무", text: "조각을 붓으로 털어 가며 무늬를 자세히 본다." },
-      { t: "청룡", text: "주변을 더 파서 나머지 조각을 다 찾는다." },
-      { t: "백호", text: "«이건 청자다!» 하고 바로 이름을 붙인다." },
-      { t: "주작", text: "모두를 불러 «이거 봐!» 하고 보여 준다." }
+      { t: "붓", text: "조각을 붓으로 털어 가며 무늬를 망가지지 않게 드러낸다." },
+      { t: "곡괭이", text: "주변을 더 파서 나머지 조각을 다 찾는다." },
+      { t: "돋보기", text: "다른 유물과 비교해 어느 시대 것인지 따져 본다." },
+      { t: "나침반", text: "모두를 불러 «이거 봐!» 하고 보여 준다." }
     ] },
-  { q: "박물관에 갇혔다. 문을 열 퍼즐이 4개나 된다. 모둠에서 너의 역할은?",
+  { q: "박물관에 갇혔다. 문을 열 퍼즐이 4개나 된다. 팀에서 너의 역할은?",
     options: [
-      { t: "주작", text: "«우리 할 수 있어!» 하며 역할을 나눠 준다." },
-      { t: "백호", text: "제일 쉬워 보이는 것부터 혼자 후딱 푼다." },
-      { t: "청룡", text: "어려운 퍼즐 하나를 맡아 끝까지 붙든다." },
-      { t: "현무", text: "교과서를 펴고 쪽수부터 찾는다." }
+      { t: "나침반", text: "«우리 할 수 있어!» 하며 역할을 나눠 준다." },
+      { t: "붓", text: "푼 단서를 보기 좋게 정리해 친구들에게 보여 준다." },
+      { t: "곡괭이", text: "어려운 퍼즐 하나를 맡아 끝까지 붙든다." },
+      { t: "돋보기", text: "교과서를 펴고 쪽수부터 찾는다." }
     ] },
   { q: "친구가 «이 유물은 조선 거야»라고 했는데, 너는 고려 것 같다. 어떻게 할래?",
     options: [
-      { t: "청룡", text: "근거를 찾을 때까지 내 생각을 밀고 간다." },
-      { t: "주작", text: "둘 다 맞을 수 있다며 다른 친구들 의견도 모아 본다." },
-      { t: "현무", text: "교과서에서 그 유물 쪽을 찾아 확인한 뒤 말한다." },
-      { t: "백호", text: "«일단 넣어 보고 틀리면 바꾸자»고 한다." }
+      { t: "곡괭이", text: "근거를 찾을 때까지 내 생각을 밀고 간다." },
+      { t: "나침반", text: "다른 친구들 의견도 모아 함께 정한다." },
+      { t: "돋보기", text: "교과서에서 그 유물 쪽을 찾아 확인한 뒤 말한다." },
+      { t: "붓", text: "유물의 무늬와 모양을 그려 두 시대 것과 나란히 비교한다." }
     ] }
 ];
+
+/* 팀 점수(수능 던전 재설계안 2-3과 같은 틀): 팀 평균(분모 = 출석자 전원, 미제출 0점) → 순위 포인트 + 보너스. */
+const SCORING = {
+  RANK_POINTS: [40, 30, 20, 10],     // 평균 같으면 같은 순위·같은 포인트, 다음 순위는 건너뜀(40·40·20·10)
+  BONUS_ALL_SUBMIT: 5,               // 출석자 전원 제출(발굴·방탈출 각각)
+  BONUS_ALL_ESCAPE: 5,               // 출석자 전원 탈출(방탈출만)
+  // 방탈출 개인 점수(최대 20): 담당 전시실 퍼즐(힌트·오답 없이 3 / 그 밖 1) ×4 + 수장고 번호 3 + 마지막 자물쇠 3 + 도우러 간 방 완료 2
+  ESC_CLEAN: 3, ESC_SOLVED: 1, ESC_VAULT: 3, ESC_FINAL: 3, ESC_HELP: 2
+};
 
 /* 지층: 배열은 아래(가장 오래된 층)부터 위로. 공통 모드는 goryeo·joseon, 유연(flex) 모드는 samguk을 맨 아래에 더한다.
  * block: 그 층 블록의 색(마인크래프트식 — 조선 전기=흙, 고려=돌, 삼국·남북국=깊은 돌). 층마다 블록 10개(5×2) 중 7개에 유물, 3개는 돌멩이뿐. */
@@ -61,8 +72,8 @@ const LAYERS = [
   { id: "joseon", title: "조선 전기 층", sub: "128~133쪽", block: "dirt", blockName: "흙" }
 ];
 const BLOCKS_PER_LAYER = 10; // 5×2
-/* 층 순서: "bottom-up"(아래 층부터, 지금 규칙) / "top-down"(표토부터 파 내려가기). 효니 결정 전까지 bottom-up. */
-const DIG_ORDER = "bottom-up";
+/* 층 순서: "top-down"(표토부터 파 내려가기, 2026-11-03 효니 확정) / "bottom-up"(아래 층부터). */
+const DIG_ORDER = "top-down";
 
 /* 유물 카드
  * clue: 이름 없이 주는 발굴 단서 / page: 교과서 쪽수 / distractors: 이름 맞히기 오답 보기(2지선다는 앞 1개, 4지선다는 3개)
@@ -577,7 +588,7 @@ const ROOMS = [
 
 /* 금고 통합 문항 — 모든 전시실의 열쇠 숫자를 모은 뒤 푼다. flex 모드면 석굴암 항목이 앞에 붙는다. */
 const VAULT = {
-  code_hint: "전시실 번호 순서(1번부터)대로 열쇠 숫자를 이어 붙이면 금고 번호가 돼. 푸는 순서는 자유야.",
+  code_hint: "우리 팀 순서대로 전시실 열쇠 숫자를 이어 붙이면 수장고 번호가 돼. 다른 방 숫자는 그 방을 맡은 팀원에게 물어봐.",
   final: {
     id: "V1", type: "order", page: "66·108·129쪽",
     q: "네 유물을 만들어진 순서대로 놓아 보자. 이것이 마지막 자물쇠야.",
@@ -587,43 +598,7 @@ const VAULT = {
   }
 };
 
-/* 유물 사진이 없을 때 쓰는 도트 아이콘(12×12). 글자 하나 = 한 칸, "."은 빈칸. 색은 PIXEL_PALETTE. app.js의 pixelSvg()가 SVG로 그린다.
- * 사진(photo)이 확인된 유물은 사진을 쓰고, 확인 못 한 유물만 이 아이콘을 쓴다. */
-const PIXEL_PALETTE = { a: "#3f8f7f", b: "#2c6a5e", c: "#e6f1ec", d: "#8a5a35", e: "#5a3a22", f: "#d9c9a6", g: "#8a8a8f", h: "#5e5e62", i: "#c9962b", j: "#8f6a18", k: "#b9552e", l: "#f3eee4", m: "#2a1f16", n: "#7a5a9c", o: "#5f9e3a" };
-const PIXEL_ICONS = {
-  vase: [ // 매병·정병·분청 병
-    "....bbbb....", "....caac....", ".....aa.....", "...baaaab...", "..baaaaaab..", ".baacaaaaab.", ".baaacaaaab.", ".baaaacaaab.", ".baaaaaaaab.", "..baaaaaab..", "...bbbbbb...", "...bbbbbb..."],
-  book: [ // 책
-    "............", ".mmmmmmmmmm.", ".mllllllllm.", ".mlmmmmmllm.", ".mllllllllm.", ".mlmmmmmllm.", ".mllllllllm.", ".mlmmmmlllm.", ".mllllllllm.", ".mllllllllm.", ".mmmmmmmmmm.", "............"],
-  plank: [ // 경판
-    "............", "............", "eeeeeeeeeeee", "edddddddddde", "edmdmdmdmdde", "edddddddddde", "edmdmdmdmdde", "edddddddddde", "eeeeeeeeeeee", "............", "............", "............"],
-  hall: [ // 무량수전(기와집)
-    ".....mm.....", "...mmmmmm...", ".mmmmmmmmmm.", "mmmmmmmmmmmm", "..ffffffff..", "..fkffkfkf..", "..fkffkfkf..", "..fkffkfkf..", "..fkffkfkf..", "..ffffffff..", ".gggggggggg.", "gggggggggggg"],
-  buddha: [ // 서 있는 불상
-    ".....gg.....", "....gggg....", "....ghhg....", ".....gg.....", "...gggggg...", "..gggggggg..", "..gggggggg..", "...gggggg...", "...gggggg...", "...gggggg...", "..hhhhhhhh..", ".hhhhhhhhhh."],
-  seated: [ // 앉은 불상
-    ".....gg.....", "....gggg....", "....ghhg....", ".....gg.....", "...gggggg...", "..gggggggg..", "..gggggggg..", "..gggggggg..", ".gggggggggg.", "hhhhhhhhhhhh", "..hhhhhhhh..", "............"],
-  pagoda: [ // 석탑
-    ".....gg.....", "....gggg....", "...hhhhhh...", "....gggg....", "..hhhhhhhh..", "....gggg....", ".hhhhhhhhhh.", "....gggg....", "hhhhhhhhhhhh", "...gggggg...", "..hhhhhhhh..", "hhhhhhhhhhhh"],
-  sundial: [ // 앙부일구
-    "............", "......m.....", ".....mm.....", "....mm......", "..jjjjjjjj..", ".jiiiiiiiij.", ".jiimiimiij.", ".jiiiiiiiij.", "..jiiiiiij..", "...jjjjjj...", "....j..j....", "...jj..jj..."],
-  painting: [ // 그림(두루마리)
-    "jjjjjjjjjjjj", ".llllllllll.", ".lloooollll.", ".looooooll..", ".lllgggglll.", ".llgggggglll", ".lggggggggl.", ".lllllllll..", ".llkkkkllll.", ".llllllllll.", "jjjjjjjjjjjj", "............"],
-  burner: [ // 향로
-    ".....ii.....", "....iiii....", "...ijjjji...", "..ijjjjjji..", "..ijjjjjji..", "...iiiiii...", "..iiiiiiii..", ".iiiiiiiiii.", "..iiiiiiii..", "....jjjj....", "...jjjjjj...", "..jjjjjjjj.."],
-  tower: [ // 첨성대
-    "....gggg....", "....gggg....", "...gggggg...", "...gggggg...", "...gggggg...", "..gggggggg..", "..ggghhggg..", "..gggggggg..", ".gggggggggg.", ".gggggggggg.", "gggggggggggg", "hhhhhhhhhhhh"],
-  bell: [ // 범종
-    ".....jj.....", "....jiij....", "...iiiiii...", "..iiiiiiii..", "..iiiiiiii..", "..iijiijii..", "..iiiiiiii..", "..iiiiiiii..", "..iiiiiiii..", ".iiiiiiiiii.", ".jjjjjjjjjj.", "............"],
-  mural: [ // 벽화
-    "kkkkkkkkkkkk", "kffffffffffk", "kffmmffffffk", "kfmmmmfffffk", "kffmmffmmffk", "kffmmfmmmmfk", "kfmmmmffmmfk", "kffffffffffk", "kffnnnnnfffk", "kffffffffffk", "kkkkkkkkkkkk", "............"]
-};
-/* 유물 id → 도트 아이콘·색 덮어쓰기(없으면 vase 기본). */
-const PIXEL_FOR = {
-  g1: "vase", g2: "plank", g3: "book", g4: "hall", g5: "buddha", g6: "vase", gx: "book",
-  j1: "book", j2: "sundial", j3: "book", j4: "vase", j5: "painting", j6: "book", jx: "pagoda",
-  s1: "burner", s2: "tower", s3: "buddha", s4: "mural", s5: "seated", s6: "bell", sx: "book"
-};
+/* 도트 그림은 pixels.js(유물마다 32×32, tools/draw_pixels.mjs로 만듦). 사진이 없거나 블록 속 미리보기에 쓴다. */
 
 /* 발굴 노트 글쓰기(서술형) */
 const WRITING = {

@@ -18,7 +18,7 @@
   --stoneblk:#808085;--stoneblk-dark:#5e5e62;--stoneblk-light:#9a9aa0;
   --deep:#4d4a56;--deep-dark:#35323d;--deep-light:#625f6e;
   --grass:#5f9e3a;--grass-dark:#3d6f22;
-  --t-청룡:#2f7a6a;--t-백호:#6b7f99;--t-주작:#b8402e;--t-현무:#3f6b4a;
+  --t-붓:#7a5a9c;--t-곡괭이:#8a5a35;--t-돋보기:#2f7a6a;--t-나침반:#b8402e;
   --sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --pixel:"NeoDunggeunmo","Noto Sans KR","Malgun Gothic",sans-serif;
   --hand:"Gaegu","Noto Sans KR",cursive;
@@ -61,6 +61,7 @@ button,input,select,textarea{font-family:var(--sans);font-size:1rem}
 .hud-timer{font-size:1.1rem}
 .hud-keys{font-size:1.2rem;letter-spacing:.2em;color:var(--brass-wash)}
 .hud-keys .k-got{color:#ffd867}.hud-keys .k-no{opacity:.5}
+.hud-keys .k-room{font-size:.8rem;letter-spacing:0;opacity:.8;margin-right:.15rem}
 .timer{font-variant-numeric:tabular-nums;font-weight:400}
 
 .scr{padding-top:1rem}
@@ -86,7 +87,7 @@ textarea{resize:vertical;min-height:5.5rem}
 .row-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;margin:.4rem 0}
 .hint-box{background:var(--brass-wash);border-left:4px solid var(--brass);padding:.5rem .8rem;border-radius:4px}
 
-/* ───────── 팀(사신도) ───────── */
+/* ───────── 팀(발굴 도구 4개, 3판) ───────── */
 .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
 @media (min-width:768px){.team-grid{grid-template-columns:repeat(4,1fr)}}
 .team-btn{border:2px solid var(--line);background:#fff;border-radius:4px;padding:.7rem .5rem;cursor:pointer;text-align:center;min-height:5rem;box-shadow:2px 2px 0 var(--stone-deep)}
@@ -98,8 +99,8 @@ textarea{resize:vertical;min-height:5.5rem}
 .team-badge .tb-emoji{font-size:2.4rem}
 .team-badge .tb-name{font-family:var(--pixel);font-size:1.4rem}
 .team-badge .tb-sub{color:var(--muted);font-size:1rem}
-.team-badge[data-team="청룡"]{border-color:var(--t-청룡)}.team-badge[data-team="백호"]{border-color:var(--t-백호)}
-.team-badge[data-team="주작"]{border-color:var(--t-주작)}.team-badge[data-team="현무"]{border-color:var(--t-현무)}
+[data-team="붓"]{--tc:var(--t-붓)}[data-team="곡괭이"]{--tc:var(--t-곡괭이)}[data-team="돋보기"]{--tc:var(--t-돋보기)}[data-team="나침반"]{--tc:var(--t-나침반)}
+.team-badge[data-team]{border-color:var(--tc)}
 .team-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
 
 /* 성향 테스트: 한 문항씩 */
@@ -335,3 +336,36 @@ textarea{resize:vertical;min-height:5.5rem}
 
 /* 어휘 풀이(glossary.js가 .term을 입힌다) */
 .term{border-bottom:1px dotted var(--wood);background:none;border-top:0;border-left:0;border-right:0;padding:0;font:inherit;color:inherit;cursor:help}
+
+/* ───────── 3판: 1인 1태블릿(담당 전시실·팀 점수·교사 화면) ───────── */
+.chip.sel{background:var(--brass-wash);border-color:var(--brass);box-shadow:inset 0 0 0 2px var(--brass);font-weight:700}
+.role-chip{min-height:2.9rem}
+.room-tile.shut{opacity:.72;background:var(--stone);filter:saturate(.6)}
+.room-tile .r-tag{align-self:flex-start;font-size:.95rem;background:var(--wood);color:#fff;padding:0 .45rem;border-radius:2px}
+.room-tile .r-tag.help{background:var(--era-goryeo)}
+.floor-foot{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;color:#f6e7c7;padding:.5rem .4rem .2rem}
+.floor-foot b{color:#ffd867}
+.floor + .err,.floor .err{color:#ffb4a8}.floor .ok{color:#b6f0c4}
+.vault-order{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;font-family:var(--pixel)}
+.vo-room{background:rgba(255,255,255,.12);border:2px solid var(--brass);padding:.1rem .45rem}
+details.rules summary{cursor:pointer;min-height:2.75rem;display:flex;align-items:center}
+details.rules ol{margin:.4rem 0 0;padding-left:1.3rem}
+/* 교사 화면: 칠판(전자칠판)에 띄우는 표 */
+body.teacher .wrap{max-width:72rem}
+textarea{width:100%;box-sizing:border-box;border:2px solid var(--line);border-radius:4px;padding:.5rem;background:#fff}
+#scrTeams label,#scrBoard label{display:block;margin:.5rem 0}
+.board-teams{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem}
+@media (min-width:1100px){.board-teams{grid-template-columns:repeat(4,1fr)}}
+.bt-col{background:#fff;border:4px solid var(--tc,var(--line));border-radius:4px;box-shadow:3px 3px 0 var(--stone-deep)}
+.bt-head{background:var(--tc,var(--wood));color:#fff;font-family:var(--pixel);font-size:1.6rem;padding:.4rem .6rem;display:flex;justify-content:space-between;align-items:baseline;gap:.4rem;flex-wrap:wrap}
+.bt-head small{font-size:1rem;font-family:var(--sans)}
+.bt-nos{display:flex;flex-wrap:wrap;gap:.35rem;padding:.6rem}
+.bt-nos span{font-family:var(--pixel);font-size:1.7rem;min-width:2.6rem;text-align:center;background:var(--stone);border-radius:3px;padding:.1rem .3rem}
+.ab-row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.3rem 0}
+.ab-team{min-width:6rem;font-weight:700}
+.ab-chip{min-width:2.9rem;min-height:2.75rem}
+.ab-chip.off{background:var(--stone-deep);color:#fff;text-decoration:line-through}
+.board-table{width:100%;border-collapse:collapse;font-size:1.1rem}
+.board-table th,.board-table td{border-bottom:1px solid var(--line);padding:.45rem .4rem;text-align:center}
+.board-table th{background:var(--wood-wash)}
+#bOut{overflow-x:auto}
