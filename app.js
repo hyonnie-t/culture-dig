@@ -2,17 +2,16 @@
  * 규칙(webapp-rules): 함수 선언을 먼저 끝내고 init()은 파일 맨 끝에서 부른다(TDZ). FocusGuard·DraftGuard는 학번이 확정되는 지점에서.
  * 제출: 기본 제출 경로(gameName·studentId·studentName·reflection·choiceSummary·choicesJson·groupId). 백엔드 URL은 history26 스킬 문서와 grep으로 대조했다.
  * 2026-11-03 2판: 블록 캐기 발굴 / 수첩(Scroll Snap) / 평면도·진열장·수장고 / 사진 라이트박스 / ?solo=1
- * 2026-11-03 3판(1인 1태블릿): 성향 테스트는 지망만 받고 팀은 교사 «팀 뽑기»(?screen=teams)가 균등하게 → 학생이 고름 /
- *   방탈출은 담당 전시실 + 팀원에게 열쇠 숫자 받기 + 팀별 수장고 순서, 전원 각자 제출 / 교사 «결산판»(?screen=board)이 평균·순위 포인트
+ * 2026-11-03 3판(1인 1태블릿): 성향 테스트는 지망만 받고 팀은 교사가 대시보드에서 균등하게 → 학생이 고름 /
+ *   방탈출은 담당 전시실 + 팀원에게 열쇠 숫자 받기 + 팀별 수장고 순서, 전원 각자 제출 / 팀 뽑기·결산은 history26 대시보드 «🏺 문화사 팀» 탭(v142)
  */
 const CONFIG = {
   SHEET_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyXSjCfWY_HiZFqW_OBR-FQDoIfF1z_STqyKWUI31MacHeY3u7hbirFSFDvW-5yuUHaJQ/exec",
   GAME_DIG: "문화사_유물발굴",        // 커리큘럼 활동 id와 글자까지 같게
   GAME_ESCAPE: "문화사_박물관방탈출",
-  GAME_QUIZ: "문화사_팀테스트",      // 커리큘럼에 없는 기록용 이름(팀 뽑기에 붙여 넣을 지망만 남긴다)
+  GAME_QUIZ: "문화사_팀테스트",      // 커리큘럼에 없는 기록용 이름(지망만 남긴다 — history26 대시보드 «문화사 팀» 탭이 읽는다)
   TAPS_TO_BREAK: 3       // 블록을 깨는 데 드는 곡괭이 탭 수
 };
-const GAME_NAMES = [CONFIG.GAME_DIG, CONFIG.GAME_ESCAPE, CONFIG.GAME_QUIZ];
 
 const S = {
   sid: "", name: "", grade: 0, ban: 0, no: 0, preview: false, solo: false,
@@ -788,7 +787,7 @@ function renderEscaped() {
   if (done) $("escMsg").textContent = "기록이 선생님 화면에 들어갔어. 아직 못 나온 팀원에게 숫자를 알려 줘 — 팀 전원이 탈출하면 보너스야!";
 }
 
-/* 제출: 수업 끝까지 못 나와도 «지금까지 기록 제출»로 낸다(미제출은 팀 평균에서 0점). 점수가 오르면 다시 낼 수 있고, 결산판은 마지막 줄을 쓴다. */
+/* 제출: 수업 끝까지 못 나와도 «지금까지 기록 제출»로 낸다(미제출은 팀 평균에서 0점). 점수가 오르면 다시 낼 수 있고, 대시보드 결산은 마지막 제출을 쓴다. */
 async function submitEscape(from) {
   const fromFloor = from === "floor";
   const errEl = fromFloor ? $("floorErr") : $("escErr"), msgEl = fromFloor ? $("floorMsg") : $("escMsg");
@@ -820,111 +819,6 @@ async function submitEscape(from) {
   if (btn) { btn.disabled = !fromFloor; btn.textContent = fromFloor ? "지금까지 기록 제출" : "제출 완료"; }
   errEl.textContent = "";
   msgEl.textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 내 점수 " + sc.score + "점이 팀 평균에 들어가." + (escaped ? "" : " 더 풀면 다시 낼 수 있어.");
-}
-
-/* ───────── 교사 화면: 팀 뽑기(?screen=teams) · 결산판(?screen=board) ─────────
- * 학번·이름 명단은 공개 레포에 두지 않는다. 번호 목록·붙여 넣은 행·확정한 팀은 이 기기(교사 PC) 브라우저에만 남는다(localStorage). 서버에 보내지 않는다. */
-const BANS = [5, 6, 7, 8];
-function tKey(kind, ban) { return "culture-dig:teacher:" + kind + ":" + ban; }
-function tLoad(kind, ban) { try { return JSON.parse(localStorage.getItem(tKey(kind, ban)) || "null"); } catch (e) { return null; } }
-function tSave(kind, ban, v) { try { localStorage.setItem(tKey(kind, ban), JSON.stringify(v)); } catch (e) { /* 저장소 막힘 */ } }
-const T = { ban: 5, draw: null, salt: 0 };
-
-function banSelect(id, onChange) {
-  const el = $(id);
-  el.innerHTML = BANS.map((b) => '<option value="' + b + '"' + (b === T.ban ? " selected" : "") + ">3학년 " + b + "반</option>").join("");
-  el.onchange = () => { T.ban = Number(el.value); onChange(); };
-}
-
-function renderTeams() {
-  banSelect("tBan", () => { T.draw = null; renderTeams(); });
-  const saved = tLoad("teams", T.ban);
-  if (!$("tNos").dataset.ban || Number($("tNos").dataset.ban) !== T.ban) {
-    const inp = tLoad("input", T.ban) || {};
-    $("tNos").value = inp.nos || (saved ? Object.keys(saved.assign).join(", ") : "");
-    $("tPaste").value = inp.paste || "";
-    $("tNos").dataset.ban = T.ban;
-  }
-  const shown = T.draw || saved;
-  $("tStatus").innerHTML = saved ? "확정한 팀이 있어(" + esc(saved.at || "") + "). «뽑기»를 다시 누르면 새로 뽑고, «확정»해야 바뀐다." : "아직 확정한 팀이 없어.";
-  $("tConfirm").disabled = !T.draw;
-  $("tResult").innerHTML = shown ? teamBoardHtml(shown) : "";
-}
-function teamBoardHtml(d) {
-  const by = {}; TEAMS.forEach((t) => { by[t.id] = []; });
-  Object.keys(d.assign).map(Number).sort((a, b) => a - b).forEach((no) => by[d.assign[no]].push(no));
-  return '<p class="muted">' + (d.withPref ? "성향 테스트 낸 학생 " + d.withPref + "명 중 1지망 " + d.first + "명 · 2지망 " + d.second + "명" : "성향 테스트 결과 없이 랜덤") + " · 팀 인원 " + TEAMS.map((t) => by[t.id].length).join("/") + "</p>" +
-    '<div class="board-teams">' + TEAMS.map((t) => '<div class="bt-col" data-team="' + esc(t.id) + '"><div class="bt-head">' + t.emoji + " " + esc(t.id) + '<small>발굴단 · ' + by[t.id].length + '명</small></div><div class="bt-nos">' + by[t.id].map((no) => "<span>" + no + "</span>").join("") + "</div></div>").join("") + "</div>";
-}
-function doDraw() {
-  const nos = Logic.parseNumbers($("tNos").value);
-  tSave("input", T.ban, { nos: $("tNos").value, paste: $("tPaste").value });
-  if (!nos.length) { $("tErr").textContent = "번호를 넣어 줘(예: 1-13, 21-34)."; return; }
-  $("tErr").textContent = "";
-  const rows = Logic.parsePasted($("tPaste").value, T.ban, CONFIG.GAME_QUIZ, GAME_NAMES, TEAMS);
-  const prefs = {}; Object.keys(rows).forEach((no) => { if (rows[no].prefs) prefs[no] = rows[no].prefs; });
-  const stray = Object.keys(prefs).filter((no) => nos.indexOf(Number(no)) < 0);
-  T.salt++;
-  T.draw = Logic.drawTeams(nos, prefs, TEAMS, T.ban + ":" + Date.now() + ":" + T.salt);
-  T.draw.at = new Date().toLocaleString("ko-KR");
-  if (stray.length) $("tErr").textContent = "번호 목록에 없는데 테스트를 낸 번호: " + stray.join(", ") + " (넣으려면 번호 목록에 더해 다시 뽑기)";
-  renderTeams();
-}
-function doConfirm() {
-  if (!T.draw) return;
-  tSave("teams", T.ban, T.draw);
-  T.draw = null; renderTeams();
-  $("tStatus").innerHTML += " <b>확정했어.</b> 칠판에 띄우면 학생들이 자기 팀을 고른다.";
-}
-
-function renderBoard() {
-  banSelect("bBan", () => { $("bPaste").value = ""; renderBoard(); });
-  const teams = tLoad("teams", T.ban);
-  const kind = $("bKind").value;
-  if (!teams) { $("bOut").innerHTML = '<p class="err">' + T.ban + '반은 «팀 뽑기»에서 확정한 팀이 없어. 먼저 팀을 확정해 줘(이 기기에서).</p>'; $("bAbsent").innerHTML = ""; return; }
-  const st = tLoad("board:" + kind, T.ban) || { absent: [], paste: "" };
-  if ($("bPaste").dataset.k !== T.ban + kind) { $("bPaste").value = st.paste || ""; $("bPaste").dataset.k = T.ban + kind; }
-  const absent = st.absent || [];
-  const nos = Object.keys(teams.assign).map(Number).sort((a, b) => a - b);
-  $("bAbsent").innerHTML = TEAMS.map((t) => '<div class="ab-row"><span class="ab-team">' + t.emoji + " " + esc(t.id) + '</span>' + nos.filter((no) => teams.assign[no] === t.id).map((no) => '<button type="button" class="chip ab-chip' + (absent.indexOf(no) >= 0 ? " off" : "") + '" data-no="' + no + '">' + no + "</button>").join("") + "</div>").join("");
-  $("bAbsent").querySelectorAll(".ab-chip").forEach((b) => b.addEventListener("click", () => {
-    const no = Number(b.dataset.no); const k = absent.indexOf(no);
-    if (k >= 0) absent.splice(k, 1); else absent.push(no);
-    tSave("board:" + kind, T.ban, { absent: absent, paste: $("bPaste").value }); renderBoard();
-  }));
-  const game = kind === "escape" ? CONFIG.GAME_ESCAPE : CONFIG.GAME_DIG;
-  const rows = Logic.parsePasted($("bPaste").value, T.ban, game, GAME_NAMES, TEAMS);
-  const stray = Object.keys(rows).filter((no) => !teams.assign[no]);
-  if (!Object.keys(rows).length) { $("bOut").innerHTML = '<p class="muted">제출 행을 붙여 넣으면 팀별 평균·순위 포인트가 나와. (학번과 «점수 n»이 든 줄만 읽어.)</p>'; try { localStorage.removeItem(tKey("result:" + kind, T.ban)); } catch (e) { /* 무시 */ } return; }
-  const res = Logic.teamResults(teams.assign, absent, rows, kind, TEAMS, SCORING);
-  if (Object.keys(rows).length) tSave("result:" + kind, T.ban, res); else { try { localStorage.removeItem(tKey("result:" + kind, T.ban)); } catch (e) { /* 무시 */ } } // 붙여 넣기 전 빈 결과가 합계에 섞이지 않게
-  const other = tLoad("result:" + (kind === "escape" ? "dig" : "escape"), T.ban);
-  const sorted = TEAMS.slice().sort((a, b) => res[a.id].rank - res[b.id].rank);
-  const h = ['<table class="board-table"><thead><tr><th>순위</th><th>팀</th><th>출석</th><th>제출</th>' + (kind === "escape" ? "<th>탈출</th>" : "") + '<th>평균</th><th>순위 포인트</th><th>보너스</th><th>이번 차시</th>' + (other ? "<th>문화사 합계</th>" : "") + "</tr></thead><tbody>"];
-  sorted.forEach((t) => {
-    const r = res[t.id];
-    h.push("<tr><td>" + r.rank + "위</td><td>" + t.emoji + " " + esc(t.id) + "</td><td>" + r.present + "</td><td>" + r.submitted + "</td>" + (kind === "escape" ? "<td>" + r.escaped + "</td>" : "") + "<td><b>" + r.avg + "</b></td><td>" + r.points + "</td><td>" + (r.bonus ? "+" + r.bonus : "0") + "</td><td><b>" + r.total + "</b></td>" + (other ? "<td><b>" + (r.total + (other[t.id] ? other[t.id].total : 0)) + "</b></td>" : "") + "</tr>");
-  });
-  h.push("</tbody></table>");
-  h.push('<p class="muted">읽은 제출 ' + Object.keys(rows).length + '명' + (stray.length ? " · 팀 명단에 없는 번호 " + stray.join(", ") + "(계산에서 뺌)" : "") + ' · 결석 ' + absent.length + '명(평균에서 뺌) · 미제출은 0점으로 평균에 들어감.</p>');
-  $("bOut").innerHTML = h.join("");
-}
-
-function initTeacher(screen) {
-  document.body.classList.add("teacher");
-  $("topStat").textContent = "선생님 화면";
-  if (screen === "teams") {
-    show("scrTeams"); renderTeams();
-    $("tDraw").addEventListener("click", doDraw);
-    $("tConfirm").addEventListener("click", doConfirm);
-  } else {
-    show("scrBoard"); renderBoard();
-    $("bKind").addEventListener("change", renderBoard);
-    $("bPaste").addEventListener("input", () => {
-      const kind = $("bKind").value; const st = tLoad("board:" + kind, T.ban) || { absent: [] };
-      st.paste = $("bPaste").value; tSave("board:" + kind, T.ban, st); renderBoard();
-    });
-  }
 }
 
 /* ───────── 서버 ───────── */
@@ -966,7 +860,7 @@ function init() {
   S.solo = q.get("solo") === "1";
   if (S.preview) $("previewBar").hidden = false;
 
-  $("brandBtn").addEventListener("click", () => { if (document.body.classList.contains("teacher")) return; renderHome(); show("scrHome"); }); // 교사 화면에서는 학생 흐름을 열지 않는다
+  $("brandBtn").addEventListener("click", () => { renderHome(); show("scrHome"); });
   $("goDig").addEventListener("click", startDig);
   $("goEscape").addEventListener("click", renderEscapeEntry);
   $("startEscape").addEventListener("click", startEscape);
@@ -986,9 +880,6 @@ function init() {
     if (S.mode === "flex") u.searchParams.delete("mode"); else u.searchParams.set("mode", "flex");
     location.href = u.toString();
   });
-
-  const tscr = q.get("screen");
-  if (tscr === "teams" || tscr === "board") { initTeacher(tscr); return; } // 교사 화면: 로그인·학생 기록 없음
 
   const sid = q.get("sid"), name = q.get("name");
   if (S.preview) { setStudent(sid || "preview", name || "미리보기"); route(); }
