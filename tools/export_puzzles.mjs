@@ -17,12 +17,12 @@ const MANIFEST = (() => { try { return JSON.parse(fs.readFileSync(path.join(here
 const circled = ["①", "②", "③", "④", "⑤"], kor = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ"];
 const out = [];
 
-out.push("## 팀 배정 — 발굴단 성향 테스트 (1차시 앞 5분)\n");
-out.push("| 팀 | 방위 | 성향 |");
+out.push("## 팀 배정 — 발굴단 성향 테스트 (1차시 첫 2분) + 교사 «팀 뽑기»\n");
+out.push("| 팀 | 도구 | 성향(학생 화면) |");
 out.push("|---|---|---|");
-for (const t of TEAMS) out.push(`| ${t.emoji} ${t.id} | ${t.dir} | ${t.trait} |`);
+for (const t of TEAMS) out.push(`| ${t.emoji} ${t.id} 발굴단 | ${t.tool} | ${t.type} — ${t.trait} |`);
 out.push("");
-out.push("문항 4개, 보기마다 팀이 하나씩 적혀 있다(학생 화면에는 팀 이름이 안 보이고 순서도 학생마다 다르다). 최다 득표 팀, 동점이면 번호로 가른다.\n");
+out.push("문항 4개, 보기마다 팀이 하나씩 적혀 있다(학생 화면에는 팀 이름이 안 보이고 순서도 학생마다 다르다). 많이 고른 순서가 1~4지망(동점은 학번 시드로 섞음). 팀은 교사 화면 «팀 뽑기»가 인원 차이 최대 1명으로 나누며 1지망을 최대한 살린다. 학생에게는 팀 이름이 아니라 성향(섬세형·끈기형·탐구형·이끄는형)만 보인다.\n");
 QUIZ.forEach((q, i) => {
   out.push(`${i + 1}. ${q.q}`);
   q.options.forEach((o) => out.push(`   - ${o.text} → ${o.t}`));
@@ -86,7 +86,16 @@ for (const r of ROOMS) {
   out.push("");
 }
 out.push("### 🚪 수장고 문(금고)\n");
-out.push(`- 번호: 공통(4실) **${Logic.vaultCode(Logic.roomsFor("basic", ROOMS))}** / 유연(5실) **${Logic.vaultCode(Logic.roomsFor("flex", ROOMS))}** (전시실 순서대로 열쇠 숫자를 이어 붙임)`);
+const B = Logic.roomsFor("basic", ROOMS), F = Logic.roomsFor("flex", ROOMS);
+out.push("- 번호는 **팀마다 전시실 순서가 다르다**(다른 팀 번호를 받아 적어도 안 열리게). 개인용(?solo=1)은 1실부터.\n");
+out.push("| 팀 | 공통(4실) 순서 → 번호 | 유연(5실) 순서 → 번호 |");
+out.push("|---|---|---|");
+TEAMS.forEach((tm, i) => {
+  const ob = Logic.vaultOrder(i, B.length), of = Logic.vaultOrder(i, F.length);
+  out.push(`| ${tm.emoji} ${tm.id} | ${ob.map((k) => k + 1 + "실").join("→")} → **${Logic.vaultCode(B, ob)}** | ${of.map((k) => k + 1 + "실").join("→")} → **${Logic.vaultCode(F, of)}** |`);
+});
+out.push(`| 개인용 | 1→2→3→4실 → **${Logic.vaultCode(B)}** | 1→…→5실 → **${Logic.vaultCode(F)}** |`);
+out.push("");
 out.push(`- 통합 문항(${VAULT.final.page}): ${VAULT.final.q} 정답 순서: ${VAULT.final.items.join(" → ")} / 유연: ${VAULT.final.flexItems.join(" → ")}`);
 out.push(`- 힌트: ${VAULT.final.hint}`);
 process.stdout.write(out.join("\n") + "\n");

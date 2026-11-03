@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261103b">
+<link rel="stylesheet" href="style.css?v=20261103d">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -57,17 +57,26 @@
       <div class="act-grid">
         <button class="act-btn" id="goDig" type="button" disabled>
           <span class="act-emoji">⛏️</span><span class="act-title">1차시 · 유물 발굴</span>
-          <span class="act-desc">층마다 블록을 깨서 유물을 찾고 이름과 배경을 맞힌다. 혼자 또는 짝.</span>
-          <span class="act-rule">점수: 첫 시도 정답 2 · 복원 1 · 배경 +1 · 흘러든 유물 +1</span>
+          <span class="act-desc">내 태블릿으로 층마다 블록을 깨서 유물을 찾고 이름과 배경을 맞힌다. 블록 자리는 사람마다 달라.</span>
+          <span class="act-rule">내 점수: 첫 시도 정답 2 · 복원 1 · 배경 +1 · 흘러든 유물 +1</span>
         </button>
         <button class="act-btn" id="goEscape" type="button" disabled>
           <span class="act-emoji">🏛️</span><span class="act-title">2차시 · 박물관 방탈출</span>
-          <span class="act-desc">모둠 태블릿 1대로 함께. 전시실 퍼즐을 풀어 열쇠 숫자를 모으고 수장고 문을 연다.</span>
-          <span class="act-rule">기록 시간 = 걸린 시간 + 힌트 1분 + 오답 20초</span>
+          <span class="act-desc">내 태블릿으로 «담당 전시실» 하나를 푼다. 다른 방 열쇠 숫자는 팀원에게 물어 모아야 수장고 문이 열린다.</span>
+          <span class="act-rule">내 점수(20): 담당 방 퍼즐 4개(힌트·오답 없이 3, 그 밖 1) · 수장고 3 · 자물쇠 3 · 도우러 간 방 2</span>
         </button>
       </div>
       <p class="muted" id="modeNote"></p>
     </div>
+
+    <details class="card rules">
+      <summary><b>🏆 팀 점수는 이렇게</b></summary>
+      <ol>
+        <li>팀 점수 = 팀원 점수의 <b>평균</b>. 그날 출석한 팀원 모두로 나누고, 안 낸 사람은 0점.</li>
+        <li>평균으로 순위를 매겨 1위 40 · 2위 30 · 3위 20 · 4위 10 포인트. 평균이 같으면 같은 포인트.</li>
+        <li>보너스: 팀원 전원 제출 +5(발굴·방탈출 각각) · 방탈출에서 전원 탈출 +5.</li>
+      </ol>
+    </details>
   </section>
 
   <!-- 성향 테스트(팀 배정) -->
@@ -109,6 +118,7 @@
           </div>
           <p class="hint-box" id="hintBox" hidden></p>
           <p class="err" id="noteErr"></p>
+          <div id="notePick" hidden></div>
           <button class="btn primary" id="submitDig" type="button">발굴 수첩 제출</button>
           <p class="ok" id="noteMsg"></p>
         </div>
@@ -119,15 +129,14 @@
   <!-- 방탈출 입구 -->
   <section id="scrEscape" class="scr" hidden>
     <div class="card placard">
-      <p class="first-line pixel" id="escFirstLine">👥 모둠 태블릿 1대로 함께 푼다</p>
+      <p class="first-line pixel" id="escFirstLine">📱 내 태블릿으로 «담당 전시실» 하나를 맡는다</p>
       <h2>🏛️ 박물관 방탈출 — 입장</h2>
-      <p>문이 잠겼다. 전시실마다 퍼즐을 풀어 <b>열쇠 숫자</b>를 모으고, 마지막에 수장고 문을 열면 탈출이야.</p>
-      <div class="row2">
-        <label>모둠 코드 <input id="teamCode" maxlength="20" autocomplete="off"></label>
-        <label>모둠 이름(선택) <input id="teamName" maxlength="12" autocomplete="off"></label>
-      </div>
-      <p class="muted" id="teamCodeNote">모둠 코드는 반과 팀으로 자동으로 채워져. 선생님이 다른 코드를 주면 그걸로 바꿔.</p>
-      <p class="muted">힌트를 열면 한 번에 1분, 4지선다·열쇠 숫자 오답은 20초가 기록 시간에 더해져.</p>
+      <p>문이 잠겼다. 전시실마다 퍼즐 4개를 풀면 <b>열쇠 숫자</b>가 나온다. 내 태블릿에서는 <b>내 담당 방만</b> 열려. 다른 방 숫자는 그 방을 맡은 팀원에게 물어 모으고, <b>우리 팀 순서</b>대로 넣으면 수장고 문이 열린다.</p>
+      <p id="escTeam"></p>
+      <h3>내 담당 전시실</h3>
+      <div class="chips" id="rolePick"></div>
+      <p class="muted" id="roleNote"></p>
+      <p class="muted">힌트를 보거나 틀리면 그 퍼즐은 1점(안 보고 한 번에 풀면 3점). 담당 방을 다 풀면 다른 방 하나를 도우러 갈 수 있어(+2).</p>
       <button class="btn primary" id="startEscape" type="button">입장 · 시간 시작</button>
     </div>
   </section>
@@ -153,11 +162,38 @@
     <div class="card placard">
       <h2>🎉 탈출!</h2>
       <p id="escapedSummary"></p>
-      <p class="muted">선생님 화면에 기록돼. 탈출 순서는 선생님이 정리해 줄 거야.</p>
+      <p class="muted">«탈출 기록 제출»을 눌러야 내 점수가 팀 평균에 들어가.</p>
       <p class="err" id="escErr"></p>
       <button class="btn primary" id="submitEscape" type="button">탈출 기록 제출</button>
       <p class="ok" id="escMsg"></p>
     </div>
+  </section>
+
+  <!-- 교사: 팀 뽑기 -->
+  <section id="scrTeams" class="scr" hidden>
+    <div class="card">
+      <h2>👩‍🏫 팀 뽑기 (교사용)</h2>
+      <p class="muted">번호 목록과 성향 테스트 결과는 이 기기 브라우저에만 남고 서버로 가지 않아.</p>
+      <label>반 <select id="tBan"></select></label>
+      <label>이 반 번호 (예: 1-13, 21-34)<textarea id="tNos" rows="2"></textarea></label>
+      <label>성향 테스트 결과 붙여 넣기 — 시트에서 «문화사_팀테스트» 행을 복사(학번과 «지망 …» 칸이 들어가게). 비우면 지망 없이 랜덤.<textarea id="tPaste" rows="4"></textarea></label>
+      <p class="err" id="tErr"></p>
+      <div class="team-actions"><button type="button" class="btn primary" id="tDraw">🎲 뽑기 (다시 뽑기)</button><button type="button" class="btn" id="tConfirm" disabled>✅ 확정</button></div>
+      <p class="muted" id="tStatus"></p>
+    </div>
+    <div id="tResult"></div>
+  </section>
+
+  <!-- 교사: 결산판 -->
+  <section id="scrBoard" class="scr" hidden>
+    <div class="card">
+      <h2>🏆 결산판 (교사용)</h2>
+      <div class="row2"><label>반 <select id="bBan"></select></label><label>활동 <select id="bKind"><option value="dig">1차시 유물 발굴</option><option value="escape">2차시 박물관 방탈출</option></select></label></div>
+      <label>제출 행 붙여 넣기 — 대시보드나 시트에서 그 활동 행을 복사(학번과 «점수 n» 칸이 들어가게). 같은 학번은 아래 줄이 쓰여.<textarea id="bPaste" rows="5"></textarea></label>
+      <h3>결석 (누르면 빠짐)</h3>
+      <div id="bAbsent"></div>
+    </div>
+    <div class="card" id="bOut"></div>
   </section>
 </main>
 
@@ -169,11 +205,12 @@
 
 <footer class="foot muted">비상교육 중등 역사② 기준 · 사진은 공공누리 제1유형(출처 표시)<a href="#" id="modeLink" hidden></a></footer>
 
-<script src="focus_guard.js?v=20261103b"></script>
-<script src="draft_guard.js?v=20261103b"></script>
-<script src="glossary.js?v=20261103b"></script>
-<script src="data.js?v=20261103b"></script>
-<script src="logic.js?v=20261103b"></script>
-<script src="app.js?v=20261103b"></script>
+<script src="focus_guard.js?v=20261103d"></script>
+<script src="draft_guard.js?v=20261103d"></script>
+<script src="glossary.js?v=20261103d"></script>
+<script src="data.js?v=20261103d"></script>
+<script src="pixels.js?v=20261103d"></script>
+<script src="logic.js?v=20261103d"></script>
+<script src="app.js?v=20261103d"></script>
 </body>
 </html>

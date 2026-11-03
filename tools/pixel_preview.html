@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>도트 그림 미리보기</title>
+<style>
+  body { margin: 0; padding: 12px; background: #2b2420; color: #f3eee4; font: 14px sans-serif; }
+  .grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  figure { margin: 0; background: #3a312b; padding: 6px; border-radius: 6px; text-align: center; }
+  canvas { display: block; width: 256px; height: 256px; image-rendering: pixelated;
+    background: repeating-conic-gradient(#d8d2c4 0 25%, #c4bdae 0 50%) 0 0 / 16px 16px; }
+  canvas.small { width: 64px; height: 64px; display: inline-block; margin: 2px; }
+  figcaption { margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="grid" id="g"></div>
+<p id="small"></p>
+<script src="../pixels.js"></script>
+<script>
+  const NAMES = { g1: "청자 매병", g2: "팔만대장경판", g3: "직지", g4: "무량수전", g5: "관촉사 미륵", g6: "청동 정병", gx: "삼강행실도",
+    j1: "훈민정음", j2: "앙부일구", j3: "칠정산", j4: "분청사기 병", j5: "몽유도원도", j6: "농사직설", jx: "경천사지 석탑",
+    s1: "금동 대향로", s2: "첨성대", s3: "연가7년명 불상", s4: "무용총 벽화", s5: "석굴암 본존", s6: "성덕대왕신종", sx: "삼국사기" };
+  function draw(id, cls) {
+    const c = document.createElement("canvas"); c.width = 32; c.height = 32; if (cls) c.className = cls;
+    const x = c.getContext("2d");
+    PIXEL_ART32[id].forEach((row, yy) => [...row].forEach((ch, xx) => { if (ch !== ".") { x.fillStyle = PIXEL_PAL32[ch]; x.fillRect(xx, yy, 1, 1); } }));
+    return c;
+  }
+  const only = new URLSearchParams(location.search).get("ids");
+  const ids = only ? only.split(",") : Object.keys(PIXEL_ART32);
+  ids.forEach((id) => {
+    const f = document.createElement("figure"); f.appendChild(draw(id));
+    const cap = document.createElement("figcaption"); cap.textContent = id + " " + (NAMES[id] || ""); f.appendChild(cap);
+    document.getElementById("g").appendChild(f);
+    document.getElementById("small").appendChild(draw(id, "small"));
+  });
+</script>
+</body>
+</html>
