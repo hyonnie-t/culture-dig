@@ -10,7 +10,7 @@ const URL_ = "https://script.google.com/macros/s/AKfycbyXSjCfWY_HiZFqW_OBR-FQDoI
 const BASE = "https://hyonnie-t.github.io/culture-dig/";
 const LESSON = {
   grade: "3", id: "문화사_발굴방탈출", title: "고려·조선 전기 문화 — 유물 발굴 → 박물관 방탈출",
-  desc: "지층을 아래부터 파며 유물이 왜 그 시대에 나왔는지 알아내고, 모둠이 전시실 퍼즐을 풀어 박물관을 탈출한다.",
+  desc: "맨 위 흙부터 블록을 캐며 유물이 왜 그 시대에 나왔는지 알아내고, 팀원과 열쇠 숫자를 모아 박물관을 탈출한다.",
   activities: [
     { id: "문화사_유물발굴", title: "1차시 · 유물 발굴", desc: "", type: "module", url: BASE + "?screen=dig" },
     { id: "문화사_박물관방탈출", title: "2차시 · 박물관 방탈출", desc: "", type: "module", url: BASE + "?screen=escape" }
