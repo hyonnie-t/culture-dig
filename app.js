@@ -3,13 +3,13 @@
  * 제출: 기본 제출 경로(gameName·studentId·studentName·reflection·choiceSummary·choicesJson·groupId). 백엔드 URL은 history26 스킬 문서와 grep으로 대조했다.
  * 2026-11-03 2판: 블록 캐기 발굴 / 수첩(Scroll Snap) / 평면도·진열장·수장고 / 사진 라이트박스 / ?solo=1
  * 2026-11-03 3판(1인 1태블릿): 성향 테스트는 지망만 받고 팀은 교사가 대시보드에서 균등하게 → 학생이 고름 /
- *   방탈출은 담당 전시실 + 팀원에게 열쇠 숫자 받기 + 팀별 수장고 순서, 전원 각자 제출 / 팀 뽑기·결산은 history26 대시보드 «🏺 문화사 팀» 탭(v142)
+ *   방탈출은 담당 전시실 + 팀원에게 열쇠 숫자 받기 + 팀별 수장고 순서, 전원 각자 제출 / 팀 뽑기·결산은 history26 대시보드 «👥 모둠·팀» 탭의 «🏺 문화사 발굴단»
  */
 const CONFIG = {
   SHEET_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyXSjCfWY_HiZFqW_OBR-FQDoIfF1z_STqyKWUI31MacHeY3u7hbirFSFDvW-5yuUHaJQ/exec",
   GAME_DIG: "문화사_유물발굴",        // 커리큘럼 활동 id와 글자까지 같게
   GAME_ESCAPE: "문화사_박물관방탈출",
-  GAME_QUIZ: "문화사_팀테스트",      // 커리큘럼에 없는 기록용 이름(지망만 남긴다 — history26 대시보드 «문화사 팀» 탭이 읽는다)
+  GAME_QUIZ: "문화사_팀테스트",      // 커리큘럼에 없는 기록용 이름(지망만 남긴다 — history26 대시보드 «👥 모둠·팀» 탭의 «🏺 문화사 발굴단»이 읽는다)
   TAPS_TO_BREAK: 3       // 블록을 깨는 데 드는 곡괭이 탭 수
 };
 
