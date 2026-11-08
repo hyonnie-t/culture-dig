@@ -22,6 +22,7 @@
 - 움직임: Scroll-triggered(수첩 쪽·전시실 타일), Sticky(상단바·HUD — HUD에 «우리 팀 순서»대로 n실 숫자), Scroll Snap(수첩 ◀▶), 곡괭이 0.18초·등장 도트→선명 0.5초. `prefers-reduced-motion`이면 전부 끈다.
 
 ## 규칙
+- 고치기 전에 `git fetch` 후 `origin/main`에서 임시 worktree(`git worktree add <임시폴더> -b <브랜치> origin/main`)를 만들어 작업한다. 여러 세션이 이 폴더를 같이 쓰므로 공용 폴더는 `main`으로 둔다(2026-11-08).
 - 교과서(비상 역사② 이병인) 밖 사실을 넣지 않는다. 유물·퍼즐마다 `page`를 붙인다. 팀·퍼즐·사진을 고치면 `node tools/export_puzzles.mjs`로 교사용 안내 아래쪽 표를 다시 뽑는다(안내 위쪽 1~4절은 손으로 쓴 부분).
 - 수장고 기본 번호는 전시실 순서대로 각 방 `key` 숫자(공통 8593, 유연 98593). 팀별 번호는 `vaultOrder`로 돌린 것. 방을 더하거나 순서를 바꾸면 테스트 기대값도 바꾼다.
 - 제출은 기본 제출 경로. `groupId` = `3-반-팀`(solo는 `학번(개인)`). 대시보드는 `choicesJson.score.score`(발굴·방탈출)·`choicesJson.escaped`·`choicesJson.ranking`(테스트)을 읽는다(없으면 `choiceSummary`의 `점수 n`). 이 필드 이름을 바꾸면 대시보드도 고친다. 방탈출은 다시 낼 수 있고 대시보드는 같은 학번의 마지막 제출을 쓴다.
