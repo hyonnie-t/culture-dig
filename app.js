@@ -498,7 +498,7 @@ function renderNote() {
   const prev = S.dig.pick && picks.some((r) => r.name === S.dig.pick) ? S.dig.pick : "";
   if (prev || firstReview) $("writePick").value = prev || firstReview.name;
   renderRefCard($("writePick").value);
-  if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; }
+  if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; renderClassMuseum("cmNote"); }
   book.scrollLeft = 0;
   updatePageNum();
 }
@@ -575,6 +575,7 @@ async function submitDig() {
   if (window.DraftGuard) DraftGuard.clear(); // 저장 성공 → 임시저장 삭제
   $("submitDig").textContent = "제출 완료";
   $("noteMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 내 점수 " + sc.score + "점이 팀 평균에 들어가.";
+  renderClassMuseum("cmNote", true);
 }
 
 /* ───────── 방탈출(1인 1태블릿: 담당 전시실 + 팀원에게 열쇠 숫자 받기) ─────────
@@ -661,6 +662,7 @@ function renderRooms() {
     (S.esc.escapedAt ? "" : '<button type="button" class="btn small" id="submitNow">지금까지 기록 제출</button>') + '</div><p class="err" id="floorErr"></p><p class="ok" id="floorMsg"></p>');
   $("floorMap").innerHTML = h.join("");
   reveal($("floorMap"));
+  renderClassMuseum("cmRooms");
   $("floorMap").querySelectorAll(".room-tile[data-i]").forEach((b) => b.addEventListener("click", () => tryOpenRoom(Number(b.dataset.i))));
   const te = $("toEscaped"); if (te) te.addEventListener("click", () => { renderEscaped(); show("scrEscaped"); });
   const tv = $("toVault"); if (tv) tv.addEventListener("click", () => { renderVault(); show("scrVault"); });
@@ -718,11 +720,13 @@ function renderPuzzle() {
     h.push('<ol class="order-list">' + st.arr.map((it, i) => '<li class="order-item"><span class="o-no">' + (i + 1) + '</span><span class="o-txt">' + esc(it) + '</span><button type="button" class="o-btn" data-up="' + i + '" aria-label="위로">▲</button><button type="button" class="o-btn" data-down="' + i + '" aria-label="아래로">▼</button></li>').join("") + '</ol>');
     h.push('<p class="muted">▲▼로 순서를 바꿔. 1번이 가장 이른 것.</p><button type="button" class="btn primary" id="checkBtn">확인</button>');
   } else if (p.type === "choice") {
-    h.push('<div class="choice-grid">' + orderOf(p.options.length, seed + ":" + p.id).map((i, k) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[k] + ' ' + esc(p.options[i]) + '</button>').join("") + '</div>');
+    const wrongs = st.wrong || []; // 고른 오답은 다시 그려도 지워진 채로 둔다
+    h.push('<div class="choice-grid">' + orderOf(p.options.length, seed + ":" + p.id).map((i, k) => '<button type="button" class="choice' + (wrongs.includes(i) ? " wrong" : "") + '" data-i="' + i + '"' + (wrongs.includes(i) ? " disabled" : "") + '>' + CIRC[k] + ' ' + esc(p.options[i]) + '</button>').join("") + '</div>');
   } else if (p.type === "key") {
     h.push('<p><input id="keyIn" class="key-input" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="열쇠 숫자"></p><button type="button" class="btn primary" id="checkBtn">확인</button>');
   }
   h.push('<p class="err" id="puzErr"></p>');
+  if (!solved) h.push(revealBox(p, st, null, isRole));
   if (!solved) h.push('<button type="button" class="btn ghost small" id="hintBtn">💡 힌트 보기' + (isRole ? " (이 퍼즐은 1점이 돼)" : "") + '</button><p class="hint-box" id="puzHint"' + (st.hint ? "" : " hidden") + '>' + esc(p.hint) + '</p>');
   if (skip() && !solved) h.push('<button type="button" class="btn ghost small" id="skipPuz">미리보기: 해결 처리</button>');
   h.push('<div class="row-between" style="margin-top:.8rem"><button type="button" class="btn" id="backRooms2">← 평면도</button>' + (solved ? '<button type="button" class="btn primary" id="nextPuz">다음 진열장 →</button>' : "") + '</div>');
@@ -735,7 +739,11 @@ function renderPuzzle() {
   const sp = $("skipPuz"); if (sp) sp.addEventListener("click", () => { S.esc.solved[p.id] = true; save(); renderPuzzle(); });
 
   if (solved) { renderTop(); return; }
-  const miss = (msg) => { $("puzErr").textContent = msg; card.classList.add("shake"); setTimeout(() => card.classList.remove("shake"), 400); save(); renderTop(); };
+  const miss = (msg) => {
+    if (needsReveal(p, st) && !card.querySelector(".reveal-box")) { save(); renderPuzzle(); $("puzErr").textContent = msg; return; } // 두 번째 오답: 정답·근거 상자를 연다
+    $("puzErr").textContent = msg + (st.tries === 1 ? " 📖 " + p.page + "을 다시 봐." : "");
+    card.classList.add("shake"); setTimeout(() => card.classList.remove("shake"), 400); save(); renderTop();
+  };
   if (p.type === "match") {
     card.querySelectorAll(".m-left").forEach((b) => b.addEventListener("click", () => { st.selLeft = Number(b.dataset.i); card.querySelectorAll(".m-left").forEach((x) => x.classList.remove("sel")); b.classList.add("sel"); }));
     card.querySelectorAll(".m-right").forEach((b) => b.addEventListener("click", () => {
@@ -761,7 +769,7 @@ function renderPuzzle() {
     card.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => {
       st.tries++;
       if (Logic.checkChoice(p, b.dataset.i).correct) { b.classList.add("right"); solvePuzzle(p); }
-      else { b.classList.add("wrong"); b.disabled = true; miss("아니야. 사료를 다시 읽어 봐."); }
+      else { b.classList.add("wrong"); b.disabled = true; st.wrong = (st.wrong || []).concat(Number(b.dataset.i)); miss("아니야. 사료를 다시 읽어 봐."); }
     }));
   } else if (p.type === "key") {
     $("checkBtn").addEventListener("click", () => {
@@ -771,6 +779,57 @@ function renderPuzzle() {
     $("keyIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("checkBtn").click(); });
   }
   renderTop();
+}
+
+/* 우리 반 박물관(5판, 역사 앱 벤치마크 C-7 — 생명의 섬 세계수): 반 전체 숫자만 보여 준다. 개인 순위·반끼리 비교는 없다.
+ * 백엔드 GET mode=cultureClass(학번·이름 없이 반 숫자만, 서버 1분 캐시). 못 읽으면 지난 숫자를 그대로 두고, 처음부터 못 읽으면 칸을 숨긴다. */
+const classStat = { at: 0, data: null, busy: null };
+function loadClassStat(force) {
+  if (S.preview || !S.grade || !S.ban) return Promise.resolve(null);
+  if (classStat.busy) return classStat.busy;
+  if (!force && classStat.data && Date.now() - classStat.at < 30000) return Promise.resolve(classStat.data);
+  classStat.busy = fetch(CONFIG.SHEET_WEBAPP_URL + "?mode=cultureClass&grade=" + S.grade + "&ban=" + S.ban)
+    .then((r) => r.json())
+    .then((j) => { if (j && j.result === "success" && j.dig && j.esc) { classStat.data = j; classStat.at = Date.now(); } return classStat.data; })
+    .catch(() => classStat.data)
+    .finally(() => { classStat.busy = null; });
+  return classStat.busy;
+}
+function classMuseumHtml(d) {
+  const num = (v) => (d ? '<b class="cm-num">' + Number(v || 0) + '</b>' : '<b class="cm-num">…</b>');
+  return '<div class="cm-head"><span>🏛️ 우리 반 박물관</span><button type="button" class="btn ghost small cm-refresh">🔄 새로고침</button></div>' +
+    '<div class="cm-row"><span class="cm-item"><span>되찾은 유물</span><span class="cm-val">' + num(d && d.dig.artifacts) + '점</span><small>발굴 수첩 낸 사람 ' + (d ? d.dig.n : "…") + '명</small></span>' +
+    '<span class="cm-item"><span>수장고 탈출</span><span class="cm-val">' + num(d && d.esc.escaped) + '명</span><small>방탈출 기록 낸 사람 ' + (d ? d.esc.n : "…") + '명</small></span></div>' +
+    '<p class="cm-note">반 전체가 함께 채우는 숫자야. 누가 몇 개를 보탰는지는 아무도 몰라. 제출하면 1분쯤 뒤에 숫자가 올라가.</p>';
+}
+function renderClassMuseum(id, force) {
+  const el = $(id); if (!el) return;
+  if (S.preview || !S.grade || !S.ban) { el.hidden = false; el.innerHTML = '<div class="cm-head"><span>🏛️ 우리 반 박물관</span></div><p class="cm-note">미리보기에서는 반 숫자를 불러오지 않아. 실제 수업에서는 반 전체가 되찾은 유물 수와 탈출한 사람 수가 여기에 떠.</p>'; return; }
+  el.hidden = false; el.innerHTML = classMuseumHtml(classStat.data);
+  loadClassStat(force).then((d) => {
+    if (!d) { el.hidden = true; return; }
+    el.innerHTML = classMuseumHtml(d);
+    const b = el.querySelector(".cm-refresh"); if (b) b.addEventListener("click", () => renderClassMuseum(id, true));
+  });
+}
+
+/* 오답 단서(5판, 역사 앱 벤치마크 C-3·4 — 성종·생명의 섬): 처음 틀리면 다시 볼 교과서 쪽만, 두 번 틀리면 정답과 근거 한 줄(why)을 연다.
+ * 정답을 봐도 학생이 직접 다시 넣어야 풀린다. 점수는 그대로(오답이 있으면 담당 방 퍼즐은 1점). */
+const REVEAL_AFTER = 2;
+function needsReveal(p, st) { return !!p.why && (st.tries || 0) >= REVEAL_AFTER; }
+function answerHtml(p, items) {
+  if (p.type === "choice") return esc(p.options[p.answer]);
+  if (p.type === "key") return esc(String(p.answer));
+  if (p.type === "match") return '<ul class="rv-list">' + p.pairs.map((pr) => '<li>' + esc(pr[0]) + ' → ' + esc(pr[1]) + '</li>').join("") + '</ul>';
+  if (p.type === "order") return '<ol class="rv-list">' + (items || p.items).map((it) => '<li>' + esc(it) + '</li>').join("") + '</ol>'; // 정답 순서 = 데이터 순서
+  return "";
+}
+function revealBox(p, st, items, isRole) {
+  if (!needsReveal(p, st)) return "";
+  return '<div class="reveal-box" role="note"><p class="rv-head">🔎 두 번 틀렸으니 핵심 단서를 열게</p>' +
+    '<div class="rv-ans"><span class="rv-tag">정답</span> ' + answerHtml(p, items) + '</div>' +
+    '<p><span class="rv-tag">왜?</span> ' + esc(p.why) + '</p>' +
+    '<p class="rv-note">정답을 보고 직접 다시 넣어 풀어.' + (isRole ? " 이 퍼즐은 1점이 돼." : "") + '</p></div>';
 }
 
 function solvePuzzle(p) {
@@ -795,6 +854,7 @@ function renderVault() {
     h.push('<p class="result-line good" style="color:#8cff9a">🔓 번호가 맞았다! 마지막 자물쇠 하나.</p><p>' + esc(VAULT.final.q) + ' <span class="muted">(' + esc(VAULT.final.page) + ')</span></p>');
     h.push('<ol class="order-list">' + st.arr.map((it, i) => '<li class="order-item"><span class="o-no">' + (i + 1) + '</span><span class="o-txt">' + esc(it) + '</span><button type="button" class="o-btn" data-up="' + i + '" aria-label="위로">▲</button><button type="button" class="o-btn" data-down="' + i + '" aria-label="아래로">▼</button></li>').join("") + '</ol>');
     h.push('<button type="button" class="btn primary" id="finalBtn">자물쇠 열기</button><p class="err" id="vErr"></p>');
+    h.push(revealBox(VAULT.final, st, items, false));
     h.push('<button type="button" class="btn ghost small" id="vHintBtn" style="color:#fff">💡 힌트 보기</button><p class="hint-box" id="vHint"' + (st.hint ? "" : " hidden") + '>' + esc(VAULT.final.hint) + '</p>');
   }
   h.push('<p style="margin-top:.8rem"><button type="button" class="btn" id="vBack">← 평면도</button></p>');
@@ -817,7 +877,8 @@ function renderVault() {
       st.tries++;
       const res = Logic.checkOrder(items, st.arr);
       if (res.correct || skip()) { S.esc.escapedAt = Date.now(); save(); if (timerHandle) clearInterval(timerHandle); renderEscaped(); show("scrEscaped"); }
-      else { $("vErr").textContent = res.ok + "/" + res.total + " 자리가 맞아."; card.classList.add("shake"); setTimeout(() => card.classList.remove("shake"), 400); save(); }
+      else if (needsReveal(VAULT.final, st) && !card.querySelector(".reveal-box")) { save(); renderVault(); $("vErr").textContent = res.ok + "/" + res.total + " 자리가 맞아."; }
+      else { $("vErr").textContent = res.ok + "/" + res.total + " 자리가 맞아." + (st.tries === 1 ? " 📖 " + VAULT.final.page + "을 다시 봐." : ""); card.classList.add("shake"); setTimeout(() => card.classList.remove("shake"), 400); save(); }
     });
     $("vHintBtn").addEventListener("click", () => { if (!st.hint) { st.hint = true; S.esc.hints++; save(); } $("vHint").hidden = false; renderTop(); });
   }
@@ -831,6 +892,7 @@ function renderEscaped() {
   const done = S.esc.submittedEscaped;
   $("submitEscape").disabled = done; $("submitEscape").textContent = done ? "제출 완료" : "탈출 기록 제출";
   if (done) $("escMsg").textContent = "기록이 선생님 화면에 들어갔어. 아직 못 나온 팀원에게 숫자를 알려 줘 — 팀 전원이 탈출하면 보너스야!";
+  renderClassMuseum("cmEsc");
 }
 
 /* 제출: 수업 끝까지 못 나와도 «지금까지 기록 제출»로 낸다(미제출은 팀 평균에서 0점). 점수가 오르면 다시 낼 수 있고, 대시보드 결산은 마지막 제출을 쓴다. */
@@ -865,6 +927,7 @@ async function submitEscape(from) {
   if (btn) { btn.disabled = !fromFloor; btn.textContent = fromFloor ? "지금까지 기록 제출" : "제출 완료"; }
   errEl.textContent = "";
   msgEl.textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 내 점수 " + sc.score + "점이 팀 평균에 들어가." + (escaped ? "" : " 더 풀면 다시 낼 수 있어.");
+  renderClassMuseum(fromFloor ? "cmRooms" : "cmEsc", true);
 }
 
 /* ───────── 서버 ───────── */

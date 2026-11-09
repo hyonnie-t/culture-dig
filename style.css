@@ -402,3 +402,22 @@ details.rules ol{margin:.4rem 0 0;padding-left:1.3rem}
 @media (min-width:768px) and (max-height:860px){ .cover-banner{aspect-ratio:3/1;} }
 @keyframes coverIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
 @media (prefers-reduced-motion: reduce){ .cover-banner{animation:none;} }
+
+/* 5판: 오답 단서 상자(두 번 틀리면) · 우리 반 박물관(반 전체 숫자) */
+.reveal-box{background:var(--page);color:var(--ink);border:2px dashed var(--brass);border-left:5px solid var(--brass);border-radius:4px;padding:.6rem .8rem;margin:.6rem 0;animation:pop .3s ease-out}
+.reveal-box p{margin:.3rem 0}
+.reveal-box .rv-head{font-weight:700;color:var(--wood-deep)}
+.reveal-box .rv-note{color:var(--muted);font-size:.95rem}
+.class-museum{background:var(--wood-wash);border:2px solid var(--wood-light);border-radius:4px;padding:.7rem .9rem;margin:1rem 0;box-shadow:3px 3px 0 var(--stone-deep)}
+.cm-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem;font-weight:700;color:var(--wood-deep)}
+.cm-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:.5rem 0}
+.cm-item{background:var(--page);border:1px solid var(--line);border-radius:4px;padding:.5rem .6rem;display:flex;flex-direction:column}
+.cm-item small{color:var(--muted);font-size:.9rem}
+.cm-num{font-family:var(--pixel);font-size:1.6rem;color:var(--brass-deep);margin:0 .15rem}
+.cm-note{color:var(--muted);font-size:.95rem;margin:.2rem 0 0}
+@media (max-width:420px){.cm-row{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.reveal-box{animation:none}}
+.reveal-box .rv-ans{margin:.3rem 0}
+.reveal-box .rv-list{margin:.3rem 0 .2rem;padding-left:1.4rem}
+.reveal-box .rv-list li{margin:.15rem 0}
+.cm-val{display:flex;align-items:baseline;gap:.1rem;font-weight:700}
