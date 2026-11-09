@@ -478,7 +478,7 @@ function renderNote() {
       '<div><p class="p-state">' + esc(state) + '</p><p class="p-note"><span class="hand-blue">' + esc(a.note) + '</span></p><p class="muted">단서: ' + esc(a.clue) + '</p></div></div></div></div>');
   });
   $("pageWrite").insertAdjacentHTML("beforebegin", pages.join(""));
-  book.querySelectorAll(".taped").forEach((el) => bindZoom(el, artById(el.dataset.zoom)));
+  book.querySelectorAll(".taped[data-zoom]").forEach((el) => bindZoom(el, artById(el.dataset.zoom))); // 한 줄 쓰기 카드(#refPhoto)는 renderRefCard가 묶는다
   $("writePrompt").textContent = WRITING.prompt;
   $("writeMin").textContent = WRITING.min;
   $("writeText").placeholder = WRITING.placeholder;
