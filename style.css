@@ -246,6 +246,37 @@ textarea{resize:vertical;min-height:5.5rem}
 .page-write{background:#fbf6e8;color:var(--ink)}
 .page-write::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:repeating-linear-gradient(0deg,#3a1f12 0 10px,#5a2f1a 10px 20px)}
 .page-write .page-in{padding-left:1.8rem}
+/* v4 사진 없는 유물: 도트로 대신하지 않고 같은 틀 안에 «교과서 n쪽» 자리 */
+.no-photo{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem;text-align:center;background:var(--stone);color:var(--wood-deep);font-size:.95rem;line-height:1.35;padding:.4rem}
+.no-photo .np-ico{font-size:1.8rem}
+.no-photo b{font-size:1rem}
+.photo-frame:has(.no-photo),.taped:has(.no-photo){cursor:default}
+/* v4 배경 오답 복기 줄 */
+.result-line .rv-row{display:block;margin-top:.3rem;font-weight:400}
+.rv-tag{display:inline-block;font-size:.85rem;padding:0 .4rem;border-radius:3px;background:var(--stone-deep);color:var(--ink);margin-right:.2rem;white-space:nowrap}
+.rv-tag.ok{background:var(--ok);color:#fff}
+/* v4 한 줄 쓰기 쪽: 유물 카드 다시 보기(위·왼쪽) + 쓰기(아래·오른쪽) */
+.write-split{display:grid;grid-template-columns:1fr;gap:1rem}
+.write-ref{border:2px dashed var(--line);background:rgba(255,255,255,.55);padding:.7rem .8rem;border-radius:4px}
+.ref-label{margin:0 0 .4rem;font-weight:700;color:var(--wood-deep)}
+/* 줄바꿈 격자: 수첩이 가로로 넘기는 상자라 안에 가로 스크롤을 또 두지 않는다(밀다가 쪽이 넘어감) */
+.ref-tabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.6rem,1fr));gap:.4rem;padding:.35rem 0 .4rem}
+.ref-tab{display:flex;flex-direction:column;align-items:center;gap:.15rem;min-height:4.9rem;padding:.3rem;border:2px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;position:relative;font-size:.85rem;line-height:1.2;color:var(--ink)}
+.ref-tab .rt-img{width:3.2rem;height:2.3rem;display:flex;align-items:center;justify-content:center;background:var(--stone);overflow:hidden;font-size:1.3rem}
+.ref-tab .rt-img img{width:100%;height:100%;object-fit:cover}
+.ref-tab .rt-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;text-align:center}
+.ref-tab .rt-flag{position:absolute;top:-.45rem;right:-.3rem;font-size:1rem}
+.ref-tab.review{border-color:var(--err)}
+.ref-tab.on{border-color:var(--brass);box-shadow:0 0 0 3px var(--brass-wash),inset 0 0 0 1px var(--brass);background:var(--brass-wash)}
+.ref-card{margin-top:.3rem}
+.rc-head{display:grid;grid-template-columns:8.5rem 1fr;gap:.8rem;align-items:start}
+.rc-name{font-family:var(--hand);font-size:1.4rem;margin:0;color:var(--wood-deep);line-height:1.25}
+.rc-name .p-page{font-size:.95rem;color:var(--muted);font-family:var(--sans)}
+.rc-state{margin:.2rem 0 0;font-size:.95rem}
+.rc-row{margin:.45rem 0 0}
+@media (min-width:900px) and (orientation:landscape){
+  .write-split{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+}
 .lined{font-family:var(--hand);font-size:1.3rem;line-height:32px;background:#fff repeating-linear-gradient(0deg,transparent 0 31px,#c9d6ea 31px 32px);background-attachment:local;padding:0 .7rem;border:2px solid var(--line)}
 
 /* ───────── 박물관 평면도 ───────── */

@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261105a-cover">
+<link rel="stylesheet" href="style.css?v=20261109a">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -109,11 +109,19 @@
       <button type="button" class="btn small" id="pgPrev" aria-label="앞 쪽">◀</button>
       <span class="pg-num pixel" id="pgNum">1/1</span>
       <button type="button" class="btn small" id="pgNext" aria-label="다음 쪽">▶</button>
+      <button type="button" class="btn small" id="pgWrite">✍️ 한 줄 쓰기로</button>
     </div>
     <div class="book" id="noteBook">
       <!-- 쪽들은 app.js가 채운다. 마지막 쪽(한 줄 쓰기)만 여기 둔다: DraftGuard가 textarea id를 본다. -->
       <div class="page page-write" id="pageWrite">
-        <div class="page-in">
+        <div class="page-in write-split">
+          <!-- v4: 수첩을 앞으로 넘기지 않고 여기서 유물 카드를 다시 본다. 고른 유물 = 아래 «어느 유물?» -->
+          <aside class="write-ref" aria-label="유물 카드 다시 보기">
+            <p class="ref-label">📒 유물 카드 다시 보기</p>
+            <div class="ref-tabs" id="refTabs"></div>
+            <div class="ref-card" id="refCard"></div>
+          </aside>
+          <div class="write-main">
           <h2 class="hand">✍️ 한 줄 쓰기</h2>
           <p id="writePrompt"></p>
           <label class="muted">어느 유물?
@@ -129,6 +137,7 @@
           <div id="notePick" hidden></div>
           <button class="btn primary" id="submitDig" type="button">발굴 수첩 제출</button>
           <p class="ok" id="noteMsg"></p>
+          </div>
         </div>
       </div>
     </div>
@@ -185,14 +194,14 @@
   <figure class="lb-fig"><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure>
 </div>
 
-<footer class="foot muted">비상교육 중등 역사② 기준 · 사진은 공공누리 제1유형(출처 표시)<a href="#" id="modeLink" hidden></a></footer>
+<footer class="foot muted">비상교육 중등 역사② 기준 · 사진은 공공누리 제1유형(출처 표시)</footer>
 
-<script src="focus_guard.js?v=20261105a"></script>
-<script src="draft_guard.js?v=20261105a"></script>
-<script src="glossary.js?v=20261105a"></script>
-<script src="data.js?v=20261105a"></script>
-<script src="pixels.js?v=20261105a"></script>
-<script src="logic.js?v=20261105a"></script>
-<script src="app.js?v=20261105a"></script>
+<script src="focus_guard.js?v=20261109a"></script>
+<script src="draft_guard.js?v=20261109a"></script>
+<script src="glossary.js?v=20261109a"></script>
+<script src="data.js?v=20261109a"></script>
+<script src="pixels.js?v=20261109a"></script>
+<script src="logic.js?v=20261109a"></script>
+<script src="app.js?v=20261109a"></script>
 </body>
 </html>
