@@ -269,15 +269,22 @@ textarea{resize:vertical;min-height:5.5rem}
 .ref-tab.review{border-color:var(--err)}
 .ref-tab.on{border-color:var(--brass);box-shadow:0 0 0 3px var(--brass-wash),inset 0 0 0 1px var(--brass);background:var(--brass-wash)}
 .ref-card{margin-top:.3rem}
+.ref-label.sub{margin:.9rem 0 .1rem;font-size:.95rem;border-top:1px dashed var(--line);padding-top:.6rem}
+.ref-tab.chosen::after{content:"✍️";position:absolute;top:-.5rem;left:-.3rem;font-size:.95rem}
+.rc-pick{margin:.45rem 0 0}
+p.rc-pick.on{display:inline-block;font-size:.9rem;font-weight:700;color:var(--brass-deep);background:var(--brass-wash);padding:.1rem .5rem;border-radius:3px}
 .rc-head{display:grid;grid-template-columns:8.5rem 1fr;gap:.8rem;align-items:start}
-.rc-name{font-family:var(--hand);font-size:1.4rem;margin:0;color:var(--wood-deep);line-height:1.25}
+.rc-name{font-family:var(--sans);font-weight:700;font-size:1.15rem;margin:0;color:var(--wood-deep);line-height:1.25}
 .rc-name .p-page{font-size:.95rem;color:var(--muted);font-family:var(--sans)}
 .rc-state{margin:.2rem 0 0;font-size:.95rem}
 .rc-row{margin:.45rem 0 0}
 @media (min-width:900px) and (orientation:landscape){
   .write-split{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
 }
-.lined{font-family:var(--hand);font-size:1.3rem;line-height:32px;background:#fff repeating-linear-gradient(0deg,transparent 0 31px,#c9d6ea 31px 32px);background-attachment:local;padding:0 .7rem;border:2px solid var(--line)}
+/* 4판: 한 줄 쓰기 쪽은 손글씨체(Gaegu) 대신 본문 고딕 — 효니 «가독성 떨어짐»(2026-11-09) */
+.page-write .hand{font-family:var(--sans);font-weight:700;font-size:1.3rem}
+.write-ref .p-note{font-family:var(--sans);font-size:1rem;line-height:1.6}
+.lined{font-family:var(--sans);font-size:1.05rem;line-height:32px;background:#fff repeating-linear-gradient(0deg,transparent 0 31px,#c9d6ea 31px 32px);background-attachment:local;padding:0 .7rem;border:2px solid var(--line)}
 
 /* ───────── 박물관 평면도 ───────── */
 .floor{border:4px solid var(--wood-deep);background:var(--wood-deep);padding:6px;box-shadow:4px 4px 0 var(--stone-deep);margin-bottom:1rem}

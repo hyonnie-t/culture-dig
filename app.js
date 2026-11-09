@@ -491,35 +491,45 @@ function renderNote() {
       '<span class="rt-img">' + (a.photo && a.photo.src ? '<img src="' + esc(a.photo.src) + '" alt="">' : '<span aria-hidden="true">📖</span>') + '</span>' + // lazy 금지: 가로로 넘기는 수첩 안이라 늦게 뜬다
       '<span class="rt-name">' + esc(r.name) + '</span>' + (needsReview(r) ? '<span class="rt-flag" aria-label="다시 볼 유물">❗</span>' : "") + '</button>';
   }).join("");
-  $("refTabs").querySelectorAll(".ref-tab").forEach((b) => b.addEventListener("click", () => { $("writePick").value = b.dataset.name; renderRefCard(); }));
+  // 사진 버튼은 «보기»만 바꾼다. 제출할 유물(«어느 유물?»)은 카드의 «이 유물로 쓰기»나 select로만 바뀐다(검토 지적: 둘러보다 제출 유물이 바뀌던 것)
+  $("refTabs").querySelectorAll(".ref-tab").forEach((b) => b.addEventListener("click", () => renderRefCard(b.dataset.name)));
   const firstReview = picks.find(needsReview); // 배경을 틀린 유물을 먼저 펼쳐 둔다(복기 → 글쓰기)
   const prev = S.dig.pick && picks.some((r) => r.name === S.dig.pick) ? S.dig.pick : "";
   if (prev || firstReview) $("writePick").value = prev || firstReview.name;
-  renderRefCard();
+  renderRefCard($("writePick").value);
   if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; }
   book.scrollLeft = 0;
   updatePageNum();
 }
-/* 다시 볼 유물 = 배경을 틀렸거나 이름을 못 맞혀 조각으로 남은 것(흘러든 유물은 글쓰기 대상이 아니라 뺀다) */
-function needsReview(r) { return !r.intruder && (!r.bgCorrect || r.broken); }
-/* 한 줄 쓰기 쪽 왼편: «어느 유물?»에서 고른 유물 카드(사진·배경·수첩 한 줄·내 결과) */
-function renderRefCard() {
-  const name = $("writePick").value;
+/* 다시 볼 유물 = 배경을 틀린 것(힌트·결과 화면 문구와 같은 기준. 흘러든 유물은 글쓰기 대상이 아니라 뺀다) */
+function needsReview(r) { return !r.intruder && !r.bgCorrect; }
+/* 한 줄 쓰기 쪽: 보고 있는 유물 카드(사진·배경·수첩 한 줄·내 결과). name을 안 주면 지금 보던 카드를 다시 그린다. */
+function renderRefCard(name) {
+  if (name) S.refView = name;
+  name = S.refView || $("writePick").value;
+  const chosen = $("writePick").value;
   const r = S.dig.results.find((x) => x.name === name);
-  $("refTabs").querySelectorAll(".ref-tab").forEach((b) => { const on = b.dataset.name === name; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+  $("refTabs").querySelectorAll(".ref-tab").forEach((b) => {
+    const on = b.dataset.name === name; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.classList.toggle("chosen", b.dataset.name === chosen);
+  });
   if (!r) { $("refCard").innerHTML = ""; return; }
   const a = artById(r.id);
-  S.dig.pick = name; save();
+  if (S.dig.pick !== chosen) { S.dig.pick = chosen; save(); }
+  const pickRow = name === chosen ? '<p class="rc-pick on">✍️ 지금 이 유물로 쓰는 중</p>' : '<button type="button" class="btn small rc-pick" id="refChoose">✍️ 이 유물로 쓰기</button>';
   const mine = r.bgPick != null && !r.bgCorrect ? '<p class="rc-row"><span class="rv-tag">내가 고른 배경</span> <s>' + esc(a.bg.options[r.bgPick]) + '</s></p>' : "";
   $("refCard").innerHTML =
     '<div class="rc-head"><div class="taped" id="refPhoto">' + artVisual(a) + '</div>' +
     '<div><p class="rc-name">' + esc(a.name) + ' <span class="p-page">' + esc(a.page) + '</span></p>' +
-    '<p class="rc-state">' + (r.firstTry ? "발굴 ✓" : (r.repaired ? "복원 ✓" : "조각")) + ' · ' + (r.bgCorrect ? "배경 ✓" : "배경 ✗ — 다시 볼 유물") + '</p></div></div>' +
-    '<p class="credit">' + esc(creditText(a)) + '</p>' +
-    '<p class="rc-row"><span class="rv-tag">발굴 단서</span> ' + esc(a.clue) + '</p>' + mine +
-    '<p class="rc-row"><span class="rv-tag ok">왜 ' + esc(ERAS[a.layer].name) + '에?</span> ' + esc(a.bg.options[a.bg.answer]) + '</p>' +
-    '<p class="rc-row p-note"><span class="hand-blue">📒 ' + esc(a.note) + '</span></p>';
+    '<p class="rc-state">' + (r.firstTry ? "발굴 ✓" : (r.repaired ? "복원 ✓" : "조각")) + ' · ' + (r.bgCorrect ? "배경 ✓" : "배경 ✗ — 다시 볼 유물") + '</p>' + pickRow + '</div></div>' +
+    // 쓰기에 필요한 줄(왜 ○○에? · 📒)을 먼저, 단서·출처는 아래로(가로 태블릿에서 화면 안에 들게)
+    mine + '<p class="rc-row"><span class="rv-tag ok">왜 ' + esc(ERAS[a.layer].name) + '에?</span> ' + esc(a.bg.options[a.bg.answer]) + '</p>' +
+    '<p class="rc-row p-note"><span class="hand-blue">📒 ' + esc(a.note) + '</span></p>' +
+    '<p class="rc-row"><span class="rv-tag">발굴 단서</span> ' + esc(a.clue) + '</p>' +
+    '<p class="credit">' + esc(creditText(a)) + '</p>';
   bindZoom($("refPhoto"), a);
+  const ch = $("refChoose");
+  if (ch) ch.addEventListener("click", () => { $("writePick").value = name; renderRefCard(name); });
 }
 function pageCount() { return $("noteBook").querySelectorAll(".page").length; }
 function pageIndex() { const b = $("noteBook"); return Math.round(b.scrollLeft / Math.max(1, b.clientWidth)); }
@@ -906,7 +916,7 @@ function init() {
   $("pgPrev").addEventListener("click", () => flipPage(-1));
   $("pgNext").addEventListener("click", () => flipPage(1));
   $("pgWrite").addEventListener("click", () => flipPage(pageCount())); // 어느 쪽에서든 한 줄 쓰기(마지막 쪽)로
-  $("writePick").addEventListener("change", renderRefCard);
+  $("writePick").addEventListener("change", () => renderRefCard($("writePick").value));
   $("noteBook").addEventListener("scroll", () => { clearTimeout(S._pgT); S._pgT = setTimeout(updatePageNum, 120); });
   $("lbClose").addEventListener("click", closeLightbox);
   $("lightbox").addEventListener("click", (e) => { if (e.target === $("lightbox")) closeLightbox(); });
