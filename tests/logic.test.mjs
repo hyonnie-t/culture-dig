@@ -15,6 +15,15 @@ vm.runInContext(fs.readFileSync(path.join(here, "..", "data.js"), "utf8") +
 vm.runInContext(fs.readFileSync(path.join(here, "..", "logic.js"), "utf8"), ctx);
 const { Logic, ERAS, LAYERS, ARTIFACTS, ROOMS, VAULT, WRITING, GLOSSARY, TEAMS, QUIZ, BLOCKS_PER_LAYER, DIG_ORDER, SCORING } = ctx;
 
+test("5판 오답 단서: 기본 전시실 퍼즐과 마지막 자물쇠는 모두 why(교과서 쪽 포함)가 있다", () => {
+  const list = ROOMS.filter((r) => !r.flexOnly).flatMap((r) => r.puzzles).concat([VAULT.final]);
+  assert.equal(list.length, 17);
+  for (const p of list) {
+    assert.ok(typeof p.why === "string" && p.why.length >= 15, p.id + " why 없음");
+    if (p.id !== "V1") assert.ok(/[0-9]쪽/.test(p.why), p.id + " why에 쪽 없음");
+  }
+});
+
 test("모드별 지층·전시실 수, 파는 순서", () => {
   assert.equal(Logic.layersFor("basic", LAYERS).join(), "goryeo,joseon");
   assert.equal(Logic.layersFor("flex", LAYERS).join(), "samguk,goryeo,joseon");

@@ -21,6 +21,8 @@
 - 유연 모드: 4판에서 끔(`init`에서 `S.mode = "basic"` 고정, `?mode=flex` 무시, 첫 화면 링크 삭제). `data.js`·`logic.js`의 flex 데이터와 테스트는 대시보드·나중 재사용 때문에 남김.
 - 한 줄 쓰기 쪽(4판): `#refTabs`(캔 유물 사진 격자, 흘러든 유물 제외)·`#refCard`(`renderRefCard`)가 `#writePick`과 연동. `needsReview`(배경 오답·조각) = ❗, 처음에 펼침. 수첩 위 `#pgWrite`로 마지막 쪽 바로 가기. 배경 오답 때 `results[].bgPick`(고른 보기 인덱스)을 남긴다.
 - 배색은 나무·석재·황동(style.css 머리 주석), 팀색 `--t-<팀>`. 도트 글꼴은 제목·블록·HUD만, 본문은 Noto Sans KR 16px 이상, 수첩(제목·표지·📒 메모)은 고운바탕(Google Fonts, 효니가 고른 9개 중 «기록»용). 손글씨 Gaegu는 4판에서 뺌(효니 가독성 지적 2026-11-09, 다시 넣지 않는다). 수첩 쪽 공책 줄도 뺌(글이 안 보임).
+- 오답 단서(5판, 2026-11-09 벤치마크 C-3·4): 방탈출 퍼즐·마지막 자물쇠는 처음 틀리면 «📖 n쪽을 다시 봐», 두 번 틀리면 `.reveal-box`(정답 + `why` 한 줄)를 연다. 학생이 직접 다시 넣어야 풀린다. `ROOMS[].puzzles[].why`·`VAULT.final.why`는 교과서 쪽을 붙여 쓴다(테스트가 잡는다). 점수 규칙은 그대로.
+- 우리 반 박물관(5판, 벤치마크 C-7): 평면도·탈출 화면·발굴 수첩 제출 뒤 `.class-museum`이 반 전체 숫자(되찾은 유물 = 발굴 found+repaired 합, 탈출한 사람 수)만 보여 준다. 백엔드 `GET mode=cultureClass&grade=&ban=`(v152, 공개, 학번·이름 없음, 서버 1분 캐시). 개인 순위·반끼리 비교는 넣지 않는다. 못 읽으면 칸을 숨긴다.
 - 움직임: Scroll-triggered(수첩 쪽·전시실 타일), Sticky(상단바·HUD — HUD에 «우리 팀 순서»대로 n실 숫자), Scroll Snap(수첩 ◀▶), 곡괭이 0.18초·등장 도트→선명 0.5초. `prefers-reduced-motion`이면 전부 끈다.
 
 ## 규칙

@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261109c">
+<link rel="stylesheet" href="style.css?v=20261109d">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -138,6 +138,7 @@
           <div id="notePick" hidden></div>
           <button class="btn primary" id="submitDig" type="button">발굴 수첩 제출</button>
           <p class="ok" id="noteMsg"></p>
+          <div class="class-museum" id="cmNote" hidden></div>
           </div>
         </div>
       </div>
@@ -162,6 +163,7 @@
   <!-- 전시실 평면도 -->
   <section id="scrRooms" class="scr" hidden>
     <div class="floor" id="floorMap"></div>
+    <div class="class-museum" id="cmRooms" hidden></div>
   </section>
 
   <!-- 전시실 안: 진열장 벽 + 안내판 -->
@@ -185,6 +187,7 @@
       <button class="btn primary" id="submitEscape" type="button">탈출 기록 제출</button>
       <p class="ok" id="escMsg"></p>
     </div>
+    <div class="class-museum" id="cmEsc" hidden></div>
   </section>
 
 </main>
@@ -197,12 +200,12 @@
 
 <footer class="foot muted">비상교육 중등 역사② 기준 · 사진은 공공누리 제1유형(출처 표시)</footer>
 
-<script src="focus_guard.js?v=20261109c"></script>
-<script src="draft_guard.js?v=20261109c"></script>
-<script src="glossary.js?v=20261109c"></script>
-<script src="data.js?v=20261109c"></script>
-<script src="pixels.js?v=20261109c"></script>
-<script src="logic.js?v=20261109c"></script>
-<script src="app.js?v=20261109c"></script>
+<script src="focus_guard.js?v=20261109d"></script>
+<script src="draft_guard.js?v=20261109d"></script>
+<script src="glossary.js?v=20261109d"></script>
+<script src="data.js?v=20261109d"></script>
+<script src="pixels.js?v=20261109d"></script>
+<script src="logic.js?v=20261109d"></script>
+<script src="app.js?v=20261109d"></script>
 </body>
 </html>
