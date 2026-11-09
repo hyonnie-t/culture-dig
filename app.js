@@ -798,7 +798,7 @@ function loadClassStat(force) {
 function classMuseumHtml(d) {
   const num = (v) => (d ? '<b class="cm-num">' + Number(v || 0) + '</b>' : '<b class="cm-num">…</b>');
   return '<div class="cm-head"><span>🏛️ 우리 반 박물관</span><button type="button" class="btn ghost small cm-refresh">🔄 새로고침</button></div>' +
-    '<div class="cm-row"><span class="cm-item"><span>되찾은 유물</span><span class="cm-val">' + num(d && d.dig.artifacts) + '점</span><small>발굴 수첩 낸 사람 ' + (d ? d.dig.n : "…") + '명</small></span>' +
+    '<div class="cm-row"><span class="cm-item"><span>되찾은 유물</span><span class="cm-val">' + num(d && d.dig.artifacts) + '개</span><small>발굴 수첩 낸 사람 ' + (d ? d.dig.n : "…") + '명</small></span>' +
     '<span class="cm-item"><span>수장고 탈출</span><span class="cm-val">' + num(d && d.esc.escaped) + '명</span><small>방탈출 기록 낸 사람 ' + (d ? d.esc.n : "…") + '명</small></span></div>' +
     '<p class="cm-note">반 전체가 함께 채우는 숫자야. 누가 몇 개를 보탰는지는 아무도 몰라. 제출하면 1분쯤 뒤에 숫자가 올라가.</p>';
 }
