@@ -3,7 +3,7 @@
  *   1판의 청자색·테라코타는 «고려청자 교과서 삽화» 느낌이라 발굴·박물관 공간감이 안 났고(효니 11-03 «느낌이 애매»),
  *   최근 앱(final-practice 베이지+남색 / vienna_diary 베이지+하늘 / IR-simulator 회색+적색 / nation-building 남보라+사프란 / survive-eras 이끼녹+감)과도 겹치지 않게
  *   바탕을 «돌 타일 바닥», 주색을 «호두나무», 강조를 «황동»으로 둔다. 시대색(삼국 자주·고려 청록·조선 적갈)은 층·전시실 구분에만 쓴다.
- * 글자: 본문 Noto Sans KR(가독성, 16px 이상), 제목·블록·HUD는 도트 글꼴 NeoDunggeunmo(fonts/, nation-building과 같은 파일), 수첩 제목·메모는 손글씨 Gaegu(vienna_diary와 같은 글꼴).
+ * 글자: 본문 Noto Sans KR(가독성, 16px 이상), 제목·블록·HUD는 도트 글꼴 NeoDunggeunmo(fonts/, nation-building과 같은 파일), 수첩도 본문 고딕(4판, 2026-11-09 효니: 손글씨체 가독성 낮아 전부 뺌). 수첩 표지 제목만 도트 글꼴.
  */
 @font-face{font-family:"NeoDunggeunmo";src:url("fonts/NeoDunggeunmo.woff") format("woff");font-display:swap}
 :root{
@@ -21,7 +21,6 @@
   --t-붓:#7a5a9c;--t-곡괭이:#8a5a35;--t-돋보기:#2f7a6a;--t-나침반:#b8402e;
   --sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --pixel:"NeoDunggeunmo","Noto Sans KR","Malgun Gothic",sans-serif;
-  --hand:"Gaegu","Noto Sans KR",cursive;
 }
 *{box-sizing:border-box}
 html{font-size:16px}
@@ -33,7 +32,7 @@ body{margin:0;color:var(--ink);font-family:var(--sans);line-height:1.6;word-brea
 h1,h2,h3{line-height:1.3;margin:0 0 .5rem}
 h1{font-size:1.5rem}h2{font-size:1.15rem}h3{font-size:1rem}
 .pixel,.pixel-title{font-family:var(--pixel);font-weight:400;letter-spacing:.01em}
-.hand{font-family:var(--hand);font-weight:700}
+.hand{font-weight:700} /* 옛 손글씨 자리 — 글꼴은 본문 고딕 */
 p{margin:.4rem 0}
 a{color:var(--wood)}
 button,input,select,textarea{font-family:var(--sans);font-size:1rem}
@@ -222,15 +221,15 @@ textarea{resize:vertical;min-height:5.5rem}
 /* 가죽 표지 */
 .page-cover{background:#5a2f1a;background-image:radial-gradient(rgba(0,0,0,.25) 1px,transparent 1px),radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:6px 6px,9px 9px;color:#f6e7c7;display:flex;align-items:center;justify-content:center;text-align:center}
 .page-cover .cover-in{border:3px double var(--brass);padding:1.6rem 1.2rem;margin:1.2rem;min-width:70%}
-.page-cover .cover-title{font-family:var(--hand);font-size:2.4rem;margin:0;color:#ffd867;text-shadow:2px 2px 0 #2a1208}
-.page-cover .cover-sub{font-family:var(--hand);font-size:1.3rem;margin:.4rem 0 0}
+.page-cover .cover-title{font-family:var(--pixel);font-size:2rem;margin:0;color:#ffd867;text-shadow:2px 2px 0 #2a1208}
+.page-cover .cover-sub{font-size:1.1rem;font-weight:700;margin:.4rem 0 0}
 .page-cover .cover-meta{margin-top:1rem;font-size:1rem;color:#e8d4b0}
 .page-cover .cover-score{display:inline-block;margin-top:.8rem;font-family:var(--pixel);background:var(--brass);color:#2a1f16;padding:.3rem .8rem;border-radius:3px}
 /* 종이 쪽 */
 .page-paper{background:#fbf6e8;background-image:repeating-linear-gradient(0deg,transparent 0 27px,#e3d8c0 27px 28px),radial-gradient(rgba(120,90,40,.06) 1px,transparent 1px);background-size:100% 28px,7px 7px;color:var(--ink)}
 .page-paper::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:repeating-linear-gradient(0deg,#3a1f12 0 10px,#5a2f1a 10px 20px)}
 .page-paper .page-in{padding-left:1.8rem}
-.page-paper .p-title{font-family:var(--hand);font-size:1.6rem;margin:0 0 .4rem;color:var(--wood-deep)}
+.page-paper .p-title{font-weight:700;font-size:1.25rem;margin:0 0 .4rem;color:var(--wood-deep)}
 .page-paper .p-title .p-page{font-size:1rem;color:var(--muted);font-family:var(--sans);font-weight:400}
 .p-body{display:grid;grid-template-columns:1fr;gap:.9rem}
 @media (min-width:768px){.p-body{grid-template-columns:11rem 1fr}}
@@ -240,8 +239,8 @@ textarea{resize:vertical;min-height:5.5rem}
 .taped svg{object-fit:contain;image-rendering:pixelated;background:#f3eee4}
 .taped::before,.taped::after{content:"";position:absolute;width:3.2rem;height:1.1rem;background:rgba(255,236,160,.75);border:1px solid rgba(180,150,60,.4);top:-.5rem}
 .taped::before{left:-.8rem;transform:rotate(-35deg)}.taped::after{right:-.8rem;transform:rotate(35deg)}
-.p-state{font-family:var(--hand);font-size:1.2rem;color:var(--brass-deep);margin:.2rem 0}
-.p-note{font-family:var(--hand);font-size:1.25rem;line-height:28px}
+.p-state{font-weight:700;font-size:1rem;color:var(--brass-deep);margin:.2rem 0}
+.p-note{font-size:1.05rem;line-height:28px}
 .p-note .hand-blue{color:#2b4a8a}
 .page-write{background:#fbf6e8;color:var(--ink)}
 .page-write::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:repeating-linear-gradient(0deg,#3a1f12 0 10px,#5a2f1a 10px 20px)}
@@ -281,9 +280,8 @@ p.rc-pick.on{display:inline-block;font-size:.9rem;font-weight:700;color:var(--br
 @media (min-width:900px) and (orientation:landscape){
   .write-split{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
 }
-/* 4판: 한 줄 쓰기 쪽은 손글씨체(Gaegu) 대신 본문 고딕 — 효니 «가독성 떨어짐»(2026-11-09) */
-.page-write .hand{font-family:var(--sans);font-weight:700;font-size:1.3rem}
-.write-ref .p-note{font-family:var(--sans);font-size:1rem;line-height:1.6}
+.page-write .hand{font-size:1.3rem}
+.write-ref .p-note{font-size:1rem;line-height:1.6}
 .lined{font-family:var(--sans);font-size:1.05rem;line-height:32px;background:#fff repeating-linear-gradient(0deg,transparent 0 31px,#c9d6ea 31px 32px);background-attachment:local;padding:0 .7rem;border:2px solid var(--line)}
 
 /* ───────── 박물관 평면도 ───────── */
