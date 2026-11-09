@@ -157,7 +157,7 @@ function renderHome() {
   } else {
     const ty = quizDone ? teamOf(S.quiz.ranking[0]) : null;
     box.innerHTML = (ty ? '<p>너의 성향: <b>' + esc(ty.type) + '</b> — ' + esc(ty.trait) + '.</p>' : "") +
-      '<p><b>칠판에서 내 번호가 있는 팀</b>을 눌러. 팀이 아직 안 떴으면 발굴부터 시작해도 돼(수첩을 낼 때까지 고르면 돼).</p><div id="teamPick"></div>';
+      '<p><b>칠판에서 내 번호가 있는 팀</b>을 눌러. «내 성향» 표시는 참고만 해, 칠판 팀이 우선이야. 팀이 아직 안 떴으면 발굴부터 시작해도 돼(수첩을 낼 때까지 고르면 돼).</p><div id="teamPick"></div>';
     renderTeamPick($("teamPick"));
     if (quizDone && !S.quiz.submitted && !skip()) box.insertAdjacentHTML("beforeend", '<p class="err">성향 테스트 결과가 아직 선생님께 안 갔어. <button type="button" class="btn small" id="quizResend">다시 보내기</button></p>');
     const rs = $("quizResend"); if (rs) rs.addEventListener("click", () => sendQuiz().then(renderHome));
@@ -171,8 +171,9 @@ function renderHome() {
   $("homeEyebrow").textContent = "3학년 한국사 · 문화사 · 교과서 100~109, 128~133쪽";
 }
 function renderTeamPick(p, after) {
+  const hint = (S.quiz && S.quiz.ranking && !S.solo) ? S.quiz.ranking[0] : ""; // 성향 1지망 — 칠판 팀이 우선
   p.innerHTML = '<div class="team-grid" style="margin-top:.6rem">' + TEAMS.map((t) =>
-    '<button type="button" class="team-btn' + (S.team === t.id ? " sel" : "") + '" data-team="' + esc(t.id) + '"><span class="t-emoji">' + t.emoji + '</span><span class="t-name">' + esc(t.id) + '</span><span class="t-desc">발굴단</span></button>').join("") + "</div>";
+    '<button type="button" class="team-btn' + (S.team === t.id ? " sel" : "") + (hint === t.id && S.team !== t.id ? " hint" : "") + '" data-team="' + esc(t.id) + '">' + (hint === t.id && S.team !== t.id ? '<span class="t-hint">내 성향</span>' : "") + '<span class="t-emoji">' + t.emoji + '</span><span class="t-name">' + esc(t.id) + '</span><span class="t-desc">발굴단</span></button>').join("") + "</div>";
   p.querySelectorAll(".team-btn").forEach((b) => b.addEventListener("click", () => {
     S.team = b.dataset.team; save(); renderTop();
     if (after) after(); else renderHome();
