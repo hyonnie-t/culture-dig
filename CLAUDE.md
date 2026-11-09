@@ -9,7 +9,7 @@
 - `focus_guard.js`·`draft_guard.js`·`glossary.js`: history26 `snippets/` 사본(2026-11-02 기준)
 - `tests/logic.test.mjs`: `node --test tests/logic.test.mjs` / `tools/export_puzzles.mjs`: 교사용 표(팀·유물·사진 출처·퍼즐·팀별 수장고 번호)를 data.js에서 뽑는다 / `tools/draw_pixels.mjs`: pixels.js를 만든다 / `tools/register_lesson.mjs`: 커리큘럼 등록(이미 등록됨)
 - 활동 id: `CONFIG.GAME_DIG` = `문화사_유물발굴`, `CONFIG.GAME_ESCAPE` = `문화사_박물관방탈출` (커리큘럼 한 차시, 활동 2개). `CONFIG.GAME_QUIZ` = `문화사_팀테스트`는 커리큘럼에 없는 기록용 이름(지망만 남김).
-- 주소 파라미터: `?screen=dig|escape`, `?mode=flex`(삼국·남북국 층·전시실 추가), `?solo=1`(방탈출 개인용), `?sid=&name=`, `?preview=1`
+- 주소 파라미터: `?screen=dig|escape`, `?mode=flex`(4판부터 무시됨), `?solo=1`(방탈출 개인용), `?sid=&name=`, `?preview=1`
 
 ## 설계(3판, 2026-11-03 효니 확정)
 - 팀 = 발굴 도구 4개 🖌️붓·⛏️곡괭이·🔍돋보기·🧭나침반 발굴단(`TEAMS`). ⓑ 수능 던전 팀(성적 균형)과 **따로**다. 성향 테스트(`QUIZ` 4문항) → `Logic.quizRanking`이 1~4지망 → 자동 제출(`문화사_팀테스트`). 학생 화면에는 팀 이름이 아니라 성향(`type`: 섬세형·끈기형·탐구형·이끄는형)만 보인다.
@@ -17,7 +17,9 @@
 - 발굴: 층마다 블록 10개(5×2) 중 7개에 유물·3개는 «돌멩이뿐». 자리는 학번+층 시드(`Logic.blockLayout`). 곡괭이 탭 3번. 이름 보기는 «그 층에서 먼저 캔 2개는 2지선다, 그다음 4지선다». 층 순서 `DIG_ORDER` = "top-down"(표토부터, 효니 확정). 개인 점수 `Logic.digScore`.
 - 방탈출: 입장 때 «담당 전시실»(`esc.role`)을 고른다. 처음엔 담당 방만 열리고, 담당 방을 다 풀면 «도우러 가기»로 한 방(`esc.help`)을 더 연다. 다른 방 열쇠 숫자는 팀원에게 말로 받는다. 수장고 번호는 팀마다 전시실 순서가 다르다(`Logic.vaultOrder(teamIdx, n)` + `Logic.vaultCode(rooms, order)`; solo는 1실부터). 개인 점수 `Logic.escScore`(담당 방 퍼즐 힌트·오답 없이 3/그 밖 1 ×4 + 수장고 3 + 자물쇠 3 + 도움 2 = 20). 시간은 점수에 없다. solo·미리보기는 모든 방이 열린다.
 - 팀 점수(`SCORING`, 수능 던전 재설계안 2-3과 같은 틀): 팀 평균(분모 = 출석자 전원, 미제출 0점, 결석만 뺌) → 순위 포인트 40/30/20/10(동점 같은 포인트, 다음 순위 건너뜀, `Logic.rankPoints`) + 전원 제출 +5 + 전원 탈출 +5(방탈출). 대시보드 «👥 모둠·팀» 탭의 «🏺 문화사 발굴단»이 `Logic.teamResults`로 계산.
-- 사진: `ARTIFACTS[].photo`. 공공누리 제1유형만. 사진이 없거나 블록 속 미리보기에는 `pixels.js`의 32×32 도트 그림(`PIXEL_ART32`/`PIXEL_PAL32`). 탭하면 라이트박스 + 출처 한 줄.
+- 사진: `ARTIFACTS[].photo`. 공공누리 제1유형만. **그림 규칙(4판, 2026-11-09 효니 «사진·도트 통일»)**: 땅속 블록 칸은 언제나 `pixels.js` 32×32 도트(`PIXEL_ART32`/`PIXEL_PAL32`), 유물 카드·수첩·한 줄 쓰기 카드는 언제나 실제 사진. 사진이 없는 유물(j3 칠정산·j5 몽유도원도)은 도트로 대신하지 않고 `artVisual`의 «📖 교과서 n쪽» 자리. 탭하면 라이트박스 + 출처 한 줄.
+- 유연 모드: 4판에서 끔(`init`에서 `S.mode = "basic"` 고정, `?mode=flex` 무시, 첫 화면 링크 삭제). `data.js`·`logic.js`의 flex 데이터와 테스트는 대시보드·나중 재사용 때문에 남김.
+- 한 줄 쓰기 쪽(4판): `#refTabs`(캔 유물 사진 격자, 흘러든 유물 제외)·`#refCard`(`renderRefCard`)가 `#writePick`과 연동. `needsReview`(배경 오답·조각) = ❗, 처음에 펼침. 수첩 위 `#pgWrite`로 마지막 쪽 바로 가기. 배경 오답 때 `results[].bgPick`(고른 보기 인덱스)을 남긴다.
 - 배색은 나무·석재·황동(style.css 머리 주석), 팀색 `--t-<팀>`. 도트 글꼴은 제목·블록·HUD만, 본문은 Noto Sans KR 16px 이상, 수첩은 손글씨 Gaegu.
 - 움직임: Scroll-triggered(수첩 쪽·전시실 타일), Sticky(상단바·HUD — HUD에 «우리 팀 순서»대로 n실 숫자), Scroll Snap(수첩 ◀▶), 곡괭이 0.18초·등장 도트→선명 0.5초. `prefers-reduced-motion`이면 전부 끈다.
 

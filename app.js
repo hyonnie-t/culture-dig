@@ -116,13 +116,15 @@ function pixelSvg(id) {
   });
   return (pixelCache[id] = '<svg viewBox="0 0 32 32" shape-rendering="crispEdges" role="img" aria-label="도트 그림">' + rects.join("") + "</svg>");
 }
+/* 그림 규칙(v4, 2026-11-09 효니 «사진이랑 도트 통일»): 땅속(블록 칸)은 언제나 도트, 유물 카드·수첩·한 줄 쓰기는 언제나 실제 사진.
+ * 쓸 수 있는 사진(공공누리 제1유형)이 없는 유물(칠정산·몽유도원도)은 도트로 대신하지 않고 «교과서 n쪽을 펴 봐» 자리를 같은 틀에 둔다. */
 function artVisual(a) {
   if (a.photo && a.photo.src) return '<img src="' + esc(a.photo.src) + '" alt="' + esc(a.name) + '" loading="lazy">';
-  return pixelSvg(a.id);
+  return '<span class="no-photo"><span class="np-ico" aria-hidden="true">📖</span><b>교과서<br>' + esc(a.page) + '</b></span>'; // 설명은 아래 출처 줄(creditText)에
 }
 function creditText(a) {
   if (a.photo && a.photo.src) return "사진: " + a.photo.credit + " · " + a.photo.source + " · " + a.photo.license + (a.photo.note ? " · " + a.photo.note : "");
-  return "그림: 직접 그린 도트 아이콘";
+  return "여기에 실을 수 있는 사진이 없어 교과서 " + a.page + " 사진으로 본다.";
 }
 function bindZoom(el, a) {
   if (!el || !a.photo || !a.photo.src) return;
@@ -165,10 +167,8 @@ function renderHome() {
   $("goDig").querySelector(".act-title").textContent = (S.dig && S.dig.done ? "1차시 · 유물 발굴 (수첩 보기)" : "1차시 · 유물 발굴");
   $("goEscape").querySelector(".act-desc").textContent = S.solo ? "개인용(?solo=1). 모든 전시실이 열려 있어. 혼자 열쇠 숫자를 모아 수장고 문을 연다." : "내 태블릿으로 «담당 전시실» 하나를 푼다. 다른 방 열쇠 숫자는 팀원에게 물어 모아야 수장고 문이 열린다.";
   const layers = Logic.layersFor(S.mode, LAYERS, DIG_ORDER).map((id) => LAYERS.find((l) => l.id === id).title).join(" → ");
-  $("modeNote").textContent = (S.mode === "flex" ? "유연 모드(3층·5실): " : "공통 모드(2층·4실): ") + "파는 순서 " + layers;
-  $("homeEyebrow").textContent = S.mode === "flex" ? "3학년 한국사 · 문화사 · 교과서 36~43, 64~71, 100~109, 128~133쪽" : "3학년 한국사 · 문화사 · 교과서 100~109, 128~133쪽";
-  $("modeLink").textContent = " · " + (S.mode === "flex" ? "공통 모드로(고려·조선 전기만)" : "유연 모드로(삼국·남북국 층 추가)");
-  $("modeLink").hidden = !S.preview; // 학생 화면에서는 숨긴다(진행이 섞이지 않게). 모드는 선생님이 주소로 정한다.
+  $("modeNote").textContent = "파는 순서 " + layers;
+  $("homeEyebrow").textContent = "3학년 한국사 · 문화사 · 교과서 100~109, 128~133쪽";
 }
 function renderTeamPick(p, after) {
   p.innerHTML = '<div class="team-grid" style="margin-top:.6rem">' + TEAMS.map((t) =>
@@ -263,7 +263,7 @@ function renderBlocks() {
         const open = S.dig.cur && S.dig.cur.id === aid;
         const state = r ? (r.intruder ? "흘러듦" : (r.firstTry ? "발굴" : (r.repaired ? "복원" : "조각"))) : "…";
         html.push('<button type="button" class="blk hole' + (open ? " open" : "") + (r && r.broken ? " broken" : "") + '" data-i="' + i + '" ' + (open ? "" : "disabled") + '><span class="blk-in">' +
-          (a.photo && a.photo.src ? '<img class="blk-thumb" src="' + esc(a.photo.src) + '" alt="">' : '<span class="blk-thumb px">' + pixelSvg(a.id) + '</span>') +
+          '<span class="blk-thumb px">' + pixelSvg(a.id) + '</span>' + // 땅속은 언제나 도트(사진은 카드에서)
           '<span class="blk-state">' + state + '</span></span></button>');
       } else {
         html.push('<button type="button" class="blk hole" disabled><span class="blk-in">🪨<br>돌멩이뿐</span></button>');
@@ -350,7 +350,9 @@ function renderArtifact(fresh) {
     if (a.intruder) {
       h.push('<p class="result-line ' + (r.eraCorrect ? "good" : "bad") + '">' + (r.eraCorrect ? "✓ 맞아. " : "✗ 아쉽다. ") + '<b>' + esc(a.name) + '</b>은(는) <b>' + esc(ERAS[a.trueEra].name) + '</b> 유물이야. <span class="muted">(' + esc(a.page) + ')</span></p>');
     } else {
-      h.push('<p class="result-line ' + (r.bgCorrect ? "good" : "bad") + '">' + (r.bgCorrect ? "✓ 배경까지 맞혔어!" : "✗ 배경은 이거야 — " + esc(a.bg.options[a.bg.answer])) + '</p>');
+      if (r.bgCorrect) h.push('<p class="result-line good">✓ 배경까지 맞혔어!</p>');
+      else h.push('<div class="result-line bad">✗ 배경이 달라.' + (r.bgPick != null ? '<span class="rv-row"><span class="rv-tag">내가 고른 것</span> <s>' + esc(a.bg.options[r.bgPick]) + '</s></span>' : "") +
+        '<span class="rv-row"><span class="rv-tag ok">맞는 배경</span> ' + esc(a.bg.options[a.bg.answer]) + '</span><span class="rv-row muted">❗ 수첩 마지막 쪽에서 다시 볼 유물로 표시해 둘게.</span></div>');
     }
     h.push('<div class="note-line">📒 수첩에 적힘: ' + esc(a.note) + '</div>');
     h.push('<button type="button" class="btn primary" id="nextSpot">⛏️ 계속 파기 →</button>');
@@ -392,7 +394,7 @@ function onChoice(btn, a) {
     const ok = i === a.bg.answer;
     card.querySelectorAll(".choice").forEach((b) => { b.disabled = true; });
     btn.classList.add(ok ? "right" : "wrong");
-    pushResult(a, { firstTry: !!c.firstTry, repaired: !!c.repaired, broken: !c.firstTry && !c.repaired, bgCorrect: ok });
+    pushResult(a, { firstTry: !!c.firstTry, repaired: !!c.repaired, broken: !c.firstTry && !c.repaired, bgCorrect: ok, bgPick: i }); // bgPick: 틀린 배경 복기용(v4)
     c.step = "result"; save();
     setTimeout(() => renderArtifact(), 400);
   } else if (c.step === "era1") {
@@ -476,16 +478,58 @@ function renderNote() {
       '<div><p class="p-state">' + esc(state) + '</p><p class="p-note"><span class="hand-blue">' + esc(a.note) + '</span></p><p class="muted">단서: ' + esc(a.clue) + '</p></div></div></div></div>');
   });
   $("pageWrite").insertAdjacentHTML("beforebegin", pages.join(""));
-  book.querySelectorAll(".taped").forEach((el) => bindZoom(el, artById(el.dataset.zoom)));
+  book.querySelectorAll(".taped[data-zoom]").forEach((el) => bindZoom(el, artById(el.dataset.zoom))); // 한 줄 쓰기 카드(#refPhoto)는 renderRefCard가 묶는다
   $("writePrompt").textContent = WRITING.prompt;
   $("writeMin").textContent = WRITING.min;
   $("writeText").placeholder = WRITING.placeholder;
   $("hintBox").textContent = WRITING.hint;
   const picks = S.dig.results.filter((r) => !r.intruder);
-  $("writePick").innerHTML = picks.map((r) => '<option value="' + esc(r.name) + '">' + esc(r.name) + '</option>').join("");
+  $("writePick").innerHTML = picks.map((r) => '<option value="' + esc(r.name) + '">' + (needsReview(r) ? "❗ " : "") + esc(r.name) + '</option>').join("");
+  $("refTabs").innerHTML = picks.map((r) => {
+    const a = artById(r.id);
+    return '<button type="button" class="ref-tab' + (needsReview(r) ? " review" : "") + '" data-name="' + esc(r.name) + '" aria-pressed="false">' +
+      '<span class="rt-img">' + (a.photo && a.photo.src ? '<img src="' + esc(a.photo.src) + '" alt="">' : '<span aria-hidden="true">📖</span>') + '</span>' + // lazy 금지: 가로로 넘기는 수첩 안이라 늦게 뜬다
+      '<span class="rt-name">' + esc(r.name) + '</span>' + (needsReview(r) ? '<span class="rt-flag" aria-label="다시 볼 유물">❗</span>' : "") + '</button>';
+  }).join("");
+  // 사진 버튼은 «보기»만 바꾼다. 제출할 유물(«어느 유물?»)은 카드의 «이 유물로 쓰기»나 select로만 바뀐다(검토 지적: 둘러보다 제출 유물이 바뀌던 것)
+  $("refTabs").querySelectorAll(".ref-tab").forEach((b) => b.addEventListener("click", () => renderRefCard(b.dataset.name)));
+  const firstReview = picks.find(needsReview); // 배경을 틀린 유물을 먼저 펼쳐 둔다(복기 → 글쓰기)
+  const prev = S.dig.pick && picks.some((r) => r.name === S.dig.pick) ? S.dig.pick : "";
+  if (prev || firstReview) $("writePick").value = prev || firstReview.name;
+  renderRefCard($("writePick").value);
   if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; }
   book.scrollLeft = 0;
   updatePageNum();
+}
+/* 다시 볼 유물 = 배경을 틀린 것(힌트·결과 화면 문구와 같은 기준. 흘러든 유물은 글쓰기 대상이 아니라 뺀다) */
+function needsReview(r) { return !r.intruder && !r.bgCorrect; }
+/* 한 줄 쓰기 쪽: 보고 있는 유물 카드(사진·배경·수첩 한 줄·내 결과). name을 안 주면 지금 보던 카드를 다시 그린다. */
+function renderRefCard(name) {
+  if (name) S.refView = name;
+  name = S.refView || $("writePick").value;
+  const chosen = $("writePick").value;
+  const r = S.dig.results.find((x) => x.name === name);
+  $("refTabs").querySelectorAll(".ref-tab").forEach((b) => {
+    const on = b.dataset.name === name; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.classList.toggle("chosen", b.dataset.name === chosen);
+  });
+  if (!r) { $("refCard").innerHTML = ""; return; }
+  const a = artById(r.id);
+  if (S.dig.pick !== chosen) { S.dig.pick = chosen; save(); }
+  const pickRow = name === chosen ? '<p class="rc-pick on">✍️ 지금 이 유물로 쓰는 중</p>' : '<button type="button" class="btn small rc-pick" id="refChoose">✍️ 이 유물로 쓰기</button>';
+  const mine = r.bgPick != null && !r.bgCorrect ? '<p class="rc-row"><span class="rv-tag">내가 고른 배경</span> <s>' + esc(a.bg.options[r.bgPick]) + '</s></p>' : "";
+  $("refCard").innerHTML =
+    '<div class="rc-head"><div class="taped" id="refPhoto">' + artVisual(a) + '</div>' +
+    '<div><p class="rc-name">' + esc(a.name) + ' <span class="p-page">' + esc(a.page) + '</span></p>' +
+    '<p class="rc-state">' + (r.firstTry ? "발굴 ✓" : (r.repaired ? "복원 ✓" : "조각")) + ' · ' + (r.bgCorrect ? "배경 ✓" : "배경 ✗ — 다시 볼 유물") + '</p>' + pickRow + '</div></div>' +
+    // 쓰기에 필요한 줄(왜 ○○에? · 📒)을 먼저, 단서·출처는 아래로(가로 태블릿에서 화면 안에 들게)
+    mine + '<p class="rc-row"><span class="rv-tag ok">왜 ' + esc(ERAS[a.layer].name) + '에?</span> ' + esc(a.bg.options[a.bg.answer]) + '</p>' +
+    '<p class="rc-row p-note"><span class="hand-blue">📒 ' + esc(a.note) + '</span></p>' +
+    '<p class="rc-row"><span class="rv-tag">발굴 단서</span> ' + esc(a.clue) + '</p>' +
+    '<p class="credit">' + esc(creditText(a)) + '</p>';
+  bindZoom($("refPhoto"), a);
+  const ch = $("refChoose");
+  if (ch) ch.addEventListener("click", () => { $("writePick").value = name; renderRefCard(name); });
 }
 function pageCount() { return $("noteBook").querySelectorAll(".page").length; }
 function pageIndex() { const b = $("noteBook"); return Math.round(b.scrollLeft / Math.max(1, b.clientWidth)); }
@@ -493,7 +537,8 @@ function updatePageNum() { $("pgNum").textContent = (pageIndex() + 1) + "/" + pa
 function flipPage(d) {
   const b = $("noteBook");
   const i = Math.min(pageCount() - 1, Math.max(0, pageIndex() + d));
-  b.scrollTo({ left: i * b.clientWidth, behavior: "smooth" });
+  if (Math.abs(d) > 1) { b.style.scrollBehavior = "auto"; b.scrollLeft = i * b.clientWidth; b.style.scrollBehavior = ""; } // 여러 쪽 건너뛰기(한 줄 쓰기로)는 바로 이동
+  else b.scrollTo({ left: i * b.clientWidth, behavior: "smooth" });
   setTimeout(updatePageNum, 350);
 }
 
@@ -856,7 +901,7 @@ function route() {
 function init() {
   const q = new URLSearchParams(location.search);
   S.preview = q.get("preview") === "1";
-  S.mode = q.get("mode") === "flex" ? "flex" : "basic";
+  S.mode = "basic"; // v4(2026-11-09 효니): 유연 모드는 일단 뺀다. ?mode=flex가 와도 공통(고려·조선 전기 2층·4실). 데이터·logic은 남겨 둠.
   S.solo = q.get("solo") === "1";
   if (S.preview) $("previewBar").hidden = false;
 
@@ -870,16 +915,12 @@ function init() {
   $("writeText").addEventListener("input", () => { $("writeCount").textContent = Logic.countChars($("writeText").value); });
   $("pgPrev").addEventListener("click", () => flipPage(-1));
   $("pgNext").addEventListener("click", () => flipPage(1));
+  $("pgWrite").addEventListener("click", () => flipPage(pageCount())); // 어느 쪽에서든 한 줄 쓰기(마지막 쪽)로
+  $("writePick").addEventListener("change", () => renderRefCard($("writePick").value));
   $("noteBook").addEventListener("scroll", () => { clearTimeout(S._pgT); S._pgT = setTimeout(updatePageNum, 120); });
   $("lbClose").addEventListener("click", closeLightbox);
   $("lightbox").addEventListener("click", (e) => { if (e.target === $("lightbox")) closeLightbox(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("lightbox").hidden) closeLightbox(); });
-  $("modeLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    const u = new URL(location.href);
-    if (S.mode === "flex") u.searchParams.delete("mode"); else u.searchParams.set("mode", "flex");
-    location.href = u.toString();
-  });
 
   const sid = q.get("sid"), name = q.get("name");
   if (S.preview) { setStudent(sid || "preview", name || "미리보기"); route(); }
@@ -892,7 +933,7 @@ function init() {
       setStudent(s, n); route();
     });
   }
-  Glossary.start({ terms: GLOSSARY, unique: true, skip: ["#topbar", "#escHud", ".strata", ".mine h2", ".shelf", ".blk", ".team-btn", ".team-badge", ".q-opt", ".act-btn", ".room-tile", ".chips", ".choice-grid", ".m-item", ".order-item", ".key-reveal", ".page-cover", ".credit"] }); // 어려운 낱말 풀이
+  Glossary.start({ terms: GLOSSARY, unique: true, skip: ["#topbar", "#escHud", ".strata", ".mine h2", ".shelf", ".blk", ".team-btn", ".team-badge", ".q-opt", ".act-btn", ".room-tile", ".chips", ".choice-grid", ".m-item", ".order-item", ".key-reveal", ".page-cover", ".credit", ".ref-tabs", ".rv-tag"] }); // 어려운 낱말 풀이
 }
 
 init();
