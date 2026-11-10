@@ -683,7 +683,7 @@ function renderEscReview() {
     sample = true;
   }
   if (!picks.length) { box.hidden = true; box.innerHTML = ""; return; }
-  const missAll = picks.filter(needsReview);
+  const missAll = picks.filter((r) => needsReview(r) && (artById(r.id) || {}).bg); // 데이터에 없는 옛 id는 세지 않는다
   const h = ['<p class="lr-head">📒 지난 시간 다시 보기' + (sample ? ' <small class="muted">(미리보기 예시)</small>' : "") + '</p>'];
   if (!missAll.length) {
     h.push('<p class="lr-note">1차시에 캔 유물의 배경을 다 맞혔어! 오늘 전시실에서 그 유물들을 다시 만나.</p>');
