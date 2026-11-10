@@ -660,12 +660,49 @@ function renderEscapeEntry() {
   $("escTeam").innerHTML = S.solo ? "개인용: 기록 이름은 <b>" + esc(Logic.soloCode(S.sid)) + "</b>" :
     (tm ? '우리 팀: <b>' + esc(teamTitle(tm)) + '</b> <button type="button" class="btn ghost small" id="escTeamChange">팀 바꾸기</button><div id="escTeamPick" hidden></div>' : '<span class="err">첫 화면에서 팀을 먼저 골라 줘.</span>');
   const tc = $("escTeamChange"); if (tc) tc.addEventListener("click", () => { const p = $("escTeamPick"); p.hidden = !p.hidden; if (!p.hidden) renderTeamPick(p, renderEscapeEntry); });
+  renderEscReview();
   const rooms = roomsNow();
   $("rolePick").innerHTML = rooms.map((r, i) => '<button type="button" class="chip role-chip' + (S.esc.role === i ? " sel" : "") + '" data-i="' + i + '">' + r.emoji + " " + (i + 1) + "실 " + esc(r.title) + "</button>").join("");
   $("rolePick").querySelectorAll(".role-chip").forEach((b) => b.addEventListener("click", () => { S.esc.role = Number(b.dataset.i); save(); renderEscapeEntry(); }));
   $("roleNote").textContent = S.solo ? "처음 풀 방을 골라. 점수는 이 방을 «담당 방»으로 계산해." : "팀원끼리 먼저 정하고 각자 눌러. 방마다 1~2명씩. 담당 방 열쇠 숫자는 그 방을 맡은 사람만 알게 돼 — 다른 팀원들이 너에게 물어볼 거야.";
   $("startEscape").disabled = !((S.team || S.solo || skip()) && S.esc.role >= 0);
   show("scrEscape");
+}
+/* 지난 시간 다시 보기(6판, 역사 앱 벤치마크 3차 — 생명의 섬 «다음 차시 시작 복습»): 방탈출 입장 때
+ * 1차시 수첩의 ❗ 유물(배경을 틀린 것, needsReview)을 최대 3개 다시 보여 준다. 같은 태블릿의 발굴 기록(S.dig)만 쓰고 점수와 상관없다.
+ * 발굴 기록이 없으면 칸을 숨긴다. 미리보기는 기록을 읽지 않으니 예시 2개를 «미리보기 예시»로 보여 준다. */
+const REVIEW_MAX = 3;
+function renderEscReview() {
+  const box = $("escReview"); if (!box) return;
+  let picks = ((S.dig && S.dig.results) || []).filter((r) => !r.intruder);
+  let sample = false;
+  if (!picks.length && skip()) { // 미리보기: 배경을 틀린 예시 2개(공통 층 유물)
+    const flexLayer = (id) => !!(LAYERS.find((l) => l.id === id) || {}).flexOnly;
+    picks = ARTIFACTS.filter((a) => !a.intruder && a.bg && !flexLayer(a.layer)).slice(0, 2)
+      .map((a) => ({ id: a.id, name: a.name, bgCorrect: false, bgPick: (a.bg.answer + 1) % a.bg.options.length }));
+    sample = true;
+  }
+  if (!picks.length) { box.hidden = true; box.innerHTML = ""; return; }
+  const missAll = picks.filter(needsReview);
+  const h = ['<p class="lr-head">📒 지난 시간 다시 보기' + (sample ? ' <small class="muted">(미리보기 예시)</small>' : "") + '</p>'];
+  if (!missAll.length) {
+    h.push('<p class="lr-note">1차시에 캔 유물의 배경을 다 맞혔어! 오늘 전시실에서 그 유물들을 다시 만나.</p>');
+  } else {
+    h.push('<p class="lr-note">1차시에 배경을 헷갈린 유물이야. 오늘 전시실 퍼즐에 다시 나올 수 있어.</p><ul class="lr-list">');
+    missAll.slice(0, REVIEW_MAX).forEach((r) => {
+      const a = artById(r.id); if (!a || !a.bg) return;
+      h.push('<li class="lr-item reveal"><button type="button" class="lr-img" data-id="' + esc(a.id) + '" aria-label="' + esc(a.name) + ' 사진 크게 보기">' + artVisual(a) + '</button><div class="lr-body">' +
+        '<b>' + esc(a.name) + '</b> <span class="muted">(' + esc(a.page) + ')</span>' +
+        (r.bgPick != null && a.bg.options[r.bgPick] != null ? '<span class="lr-row"><span class="rv-tag">내가 고른 것</span> <s>' + esc(a.bg.options[r.bgPick]) + '</s></span>' : "") +
+        '<span class="lr-row"><span class="rv-tag ok">맞는 배경</span> ' + esc(a.bg.options[a.bg.answer]) + '</span></div></li>');
+    });
+    h.push('</ul>');
+    if (missAll.length > REVIEW_MAX) h.push('<p class="muted lr-more">나머지 ' + (missAll.length - REVIEW_MAX) + '개는 «1차시 · 유물 발굴 (수첩 보기)»의 마지막 쪽에 있어.</p>');
+  }
+  box.innerHTML = h.join("");
+  box.hidden = false;
+  box.querySelectorAll(".lr-img").forEach((el) => bindZoom(el, artById(el.dataset.id)));
+  reveal(box);
 }
 function startEscape() {
   if (S.esc.role < 0) return;
