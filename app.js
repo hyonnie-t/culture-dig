@@ -118,20 +118,21 @@ function pixelSvg(id) {
 }
 /* 그림 규칙(v4, 2026-11-09 효니 «사진이랑 도트 통일»): 땅속(블록 칸)은 언제나 도트, 유물 카드·수첩·한 줄 쓰기는 언제나 실제 사진.
  * 쓸 수 있는 사진(공공누리 제1유형)이 없는 유물(칠정산·몽유도원도)은 도트로 대신하지 않고 «교과서 n쪽을 펴 봐» 자리를 같은 틀에 둔다. */
-function artVisual(a) {
-  if (a.photo && a.photo.src) return '<img src="' + esc(a.photo.src) + '" alt="' + esc(a.name) + '" loading="lazy">';
+function artVisual(a, hideName) {
+  if (a.photo && a.photo.src) return '<img src="' + esc(a.photo.src) + '" alt="' + (hideName ? "유물 사진" : esc(a.name)) + '" loading="lazy">';
   return '<span class="no-photo"><span class="np-ico" aria-hidden="true">📖</span><b>교과서<br>' + esc(a.page) + '</b></span>'; // 설명은 아래 출처 줄(creditText)에
 }
-function creditText(a) {
-  if (a.photo && a.photo.src) return "사진: " + a.photo.credit + " · " + a.photo.source + " · " + a.photo.license + (a.photo.note ? " · " + a.photo.note : "");
+function creditText(a, hideName) { // hideName: 출처 메모(«뚜껑 있는 매병»·«1377년 원본은 프랑스에» 등)가 정답 힌트라 이름을 맞히기 전엔 뺀다
+  if (a.photo && a.photo.src) return "사진: " + a.photo.credit + " · " + a.photo.source + " · " + a.photo.license + (a.photo.note && !hideName ? " · " + a.photo.note : "");
   return "여기에 실을 수 있는 사진이 없어 교과서 " + a.page + " 사진으로 본다.";
 }
-function bindZoom(el, a) {
+/* hideName: 발굴 카드에서 이름을 맞히기 전(이름·시대 문제 단계) — 확대 캡션에 이름이 나오면 답이 보인다(2026-11-10 1차시 지적) */
+function bindZoom(el, a, hideName) {
   if (!el || !a.photo || !a.photo.src) return;
-  el.addEventListener("click", () => openLightbox(a.photo.src, a.name + " (" + a.page + ") — " + creditText(a)));
+  el.addEventListener("click", () => openLightbox(a.photo.src, hideName ? creditText(a, true) : a.name + " (" + a.page + ") — " + creditText(a), hideName));
 }
-function openLightbox(src, cap) {
-  $("lbImg").src = src; $("lbImg").alt = cap; $("lbCap").textContent = cap;
+function openLightbox(src, cap, hideName) {
+  $("lbImg").src = src; $("lbImg").alt = hideName ? "유물 사진" : cap; $("lbCap").textContent = cap;
   $("lightbox").hidden = false;
 }
 function closeLightbox() { $("lightbox").hidden = true; $("lbImg").src = ""; }
@@ -262,8 +263,9 @@ function renderBlocks() {
       if (aid) {
         const a = artById(aid), r = S.dig.results.find((x) => x.id === aid);
         const open = S.dig.cur && S.dig.cur.id === aid;
-        const state = r ? (r.intruder ? "흘러듦" : (r.firstTry ? "발굴" : (r.repaired ? "복원" : "조각"))) : "…";
-        html.push('<button type="button" class="blk hole' + (open ? " open" : "") + (r && r.broken ? " broken" : "") + '" data-i="' + i + '" ' + (open ? "" : "disabled") + '><span class="blk-in">' +
+        const orphan = !r && !S.dig.cur;
+        const state = r ? (r.intruder ? "흘러듦" : (r.firstTry ? "발굴" : (r.repaired ? "복원" : "조각"))) : (orphan ? "눌러서 꺼내기" : "…");
+        html.push('<button type="button" class="blk hole' + (open ? " open" : "") + (orphan ? " orphan" : "") + (r && r.broken ? " broken" : "") + '" data-i="' + i + '" ' + (open || orphan ? "" : "disabled") + '><span class="blk-in">' +
           '<span class="blk-thumb px">' + pixelSvg(a.id) + '</span>' + // 땅속은 언제나 도트(사진은 카드에서)
           '<span class="blk-state">' + state + '</span></span></button>');
       } else {
@@ -285,10 +287,19 @@ function renderBlocks() {
   renderTop();
 }
 
+let breaking = false; // 블록이 깨지는 0.2초 동안 다른 블록을 못 깨게(2026-11-10 1차시: 연타하면 먼저 깬 유물이 잠김)
+/* 구멍은 났는데 결과가 없는 유물(옛 버그로 잠긴 것) — 다시 열 수 있게 한다 */
+function orphanAt(lid, i) { const aid = S.dig.blocks[lid][i]; return aid && S.dig.holes[lid + ":" + i] && !S.dig.results.some((r) => r.id === aid) ? aid : null; }
 function onBlock(i, btn) {
   const l = curLayer();
   const key = l.id + ":" + i;
-  if (S.dig.holes[key]) { if (S.dig.cur) $("artCard").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  if (breaking) return;
+  if (S.dig.holes[key]) {
+    const orphan = orphanAt(l.id, i);
+    if (orphan && !S.dig.cur) { openArtifact(orphan, i); return; }
+    if (S.dig.cur) $("artCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
   if (S.dig.cur) { $("mineToast").textContent = "먼저 꺼낸 유물부터 처리해!"; $("artCard").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
   S.dig.taps[key] = (S.dig.taps[key] || 0) + 1;
   btn.classList.remove("hit"); void btn.offsetWidth; btn.classList.add("hit");
@@ -297,7 +308,9 @@ function onBlock(i, btn) {
     const aid = S.dig.blocks[l.id][i];
     save();
     btn.classList.add("crumble");
+    breaking = true;
     setTimeout(() => {
+      breaking = false;
       if (aid) openArtifact(aid, i);
       else { renderBlocks(); $("mineToast").textContent = "🪨 돌멩이뿐… 다른 블록을 파 보자."; }
     }, 200);
@@ -310,7 +323,7 @@ function onBlock(i, btn) {
 
 function openArtifact(aid, blockIdx) {
   const a = artById(aid);
-  S.dig.cur = { id: a.id, step: a.intruder ? "era1" : "name", tries: 0, repairTries: 0, blockIdx: blockIdx };
+  S.dig.cur = { id: a.id, step: a.intruder ? "era" : "name", tries: 0, repairTries: 0, blockIdx: blockIdx };
   save();
   renderBlocks();
   renderArtifact(true);
@@ -322,10 +335,10 @@ function renderArtifact(fresh) {
   const a = artById(c.id);
   const l = curLayer();
   const eraName = ERAS[l.id].name;
-  const found = layerFound(l.id).length;
+  const found = layerFound(l.id).filter((r) => r.id !== a.id).length;
   const h = ['<div class="eyebrow pixel">' + esc(l.title) + ' · ' + (found + 1) + '/' + Logic.artifactsOf(l.id, ARTIFACTS).length + '</div>'];
   h.push('<h2 class="pixel">흙 속에서 무언가 나왔다!</h2>');
-  h.push('<div class="art-head"><div><div class="photo-frame' + (fresh ? " reveal-px" : "") + '" id="artPhoto">' + artVisual(a) + (a.photo ? '<span class="zoom">🔍 확대</span>' : "") + '</div><p class="credit">' + esc(creditText(a)) + '</p></div>');
+  h.push('<div class="art-head"><div><div class="photo-frame' + (fresh ? " reveal-px" : "") + '" id="artPhoto">' + artVisual(a, hideNameNow(c)) + (a.photo ? '<span class="zoom">🔍 확대</span>' : "") + '</div><p class="credit">' + esc(creditText(a, hideNameNow(c))) + '</p></div>');
   h.push('<div><div class="clue">' + esc(a.clue) + '</div>');
 
   if (c.step === "name") {
@@ -340,16 +353,15 @@ function renderArtifact(fresh) {
     h.push('<p class="result-line good">' + (c.firstTry ? "⛏️ 발굴 성공! " : (c.repaired ? "🩹 복원 완료! " : "🧩 조각으로 남겼어. ")) + '<b>' + esc(a.name) + '</b> <span class="muted">(' + esc(a.page) + ')</span></p>');
     h.push('<h3>왜 ' + esc(eraName) + '에 나왔을까?</h3><p>' + esc(a.bg.q) + '</p>');
     h.push('<div class="choice-grid">' + orderOf(a.bg.options.length, S.sid + ":bg:" + a.id).map((i, k) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[k] + ' ' + esc(a.bg.options[i]) + '</button>').join("") + '</div>');
-  } else if (c.step === "era1") {
-    h.push('<h3>이 유물은 ' + esc(eraName) + ' 층에서 나왔어. 정말 ' + esc(eraName) + '의 유물일까?</h3>');
-    h.push('<div class="choice-grid"><button type="button" class="choice" data-v="yes">맞아, ' + esc(eraName) + ' 유물이야</button><button type="button" class="choice" data-v="no">아니야, 다른 시대에서 흘러든 유물이야</button></div>');
-  } else if (c.step === "era2") {
-    h.push('<p class="result-line good">🔍 잘 봤어! 그럼 어느 시대 유물일까?</p>');
-    h.push('<div class="choice-grid">' + Object.keys(ERAS).filter((k) => k !== l.id).map((k) => '<button type="button" class="choice" data-v="' + k + '">' + esc(ERAS[k].name) + '</button>').join("") + '</div>');
+  } else if (c.step === "era") {
+    h.push('<h3>' + esc(eraName) + ' 층에서 나온 이 유물, 언제 왜 만들어졌을까?</h3><p class="muted">단서를 잘 읽어. 땅속에서는 다른 시대 유물이 섞여 들기도 해.</p>');
+    h.push('<div class="choice-grid">' + orderOf(a.eraQ.options.length, S.sid + ":era:" + a.id).map((i, k) => '<button type="button" class="choice" data-i="' + i + '">' + CIRC[k] + ' ' + esc(a.eraQ.options[i]) + '</button>').join("") + '</div>');
   } else if (c.step === "result") {
     const r = S.dig.results.find((x) => x.id === a.id);
     if (a.intruder) {
-      h.push('<p class="result-line ' + (r.eraCorrect ? "good" : "bad") + '">' + (r.eraCorrect ? "✓ 맞아. " : "✗ 아쉽다. ") + '<b>' + esc(a.name) + '</b>은(는) <b>' + esc(ERAS[a.trueEra].name) + '</b> 유물이야. <span class="muted">(' + esc(a.page) + ')</span></p>');
+      h.push('<div class="result-line ' + (r.eraCorrect ? "good" : "bad") + '">' + (r.eraCorrect ? "✓ 맞아. " : "✗ 아쉽다. ") + '<b>' + esc(a.name) + '</b>은(는) ' + esc(eraName) + ' 층에 흘러든 <b>' + esc(ERAS[a.trueEra].name) + '</b> 유물이야. <span class="muted">(' + esc(a.page) + ')</span>' +
+        (!r.eraCorrect && r.eraPick != null ? '<span class="rv-row"><span class="rv-tag">내가 고른 것</span> <s>' + esc(a.eraQ.options[r.eraPick]) + '</s></span>' : "") +
+        '<span class="rv-row"><span class="rv-tag ok">맞는 설명</span> ' + esc(a.eraQ.options[a.eraQ.answer]) + '</span></div>');
     } else {
       if (r.bgCorrect) h.push('<p class="result-line good">✓ 배경까지 맞혔어!</p>');
       else h.push('<div class="result-line bad">✗ 배경이 달라.' + (r.bgPick != null ? '<span class="rv-row"><span class="rv-tag">내가 고른 것</span> <s>' + esc(a.bg.options[r.bgPick]) + '</s></span>' : "") +
@@ -365,13 +377,15 @@ function renderArtifact(fresh) {
   card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
   if (fresh) card.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  bindZoom($("artPhoto"), a);
+  bindZoom($("artPhoto"), a, hideNameNow(c));
   card.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => onChoice(b, a)));
   card.querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => onRepair(b, a)));
   const nx = $("nextSpot"); if (nx) nx.addEventListener("click", nextSpot);
   const sk = $("skipBtn"); if (sk) sk.addEventListener("click", () => { pushResult(a, { firstTry: true, bgCorrect: true }); S.dig.cur.step = "result"; renderArtifact(); });
 }
 
+/* 이름을 아직 모르는 단계(이름 4지선다·흘러든 유물 문제) — 사진 확대·alt에 이름을 숨긴다 */
+function hideNameNow(c) { return c.step === "name" || c.step === "era" || c.step === "era1" || c.step === "era2"; }
 function pushResult(a, extra) {
   const base = { id: a.id, layer: a.layer, name: a.name, intruder: !!a.intruder, firstTry: false, repaired: false, broken: false, bgCorrect: false, eraCorrect: false };
   const r = Object.assign(base, extra);
@@ -398,15 +412,13 @@ function onChoice(btn, a) {
     pushResult(a, { firstTry: !!c.firstTry, repaired: !!c.repaired, broken: !c.firstTry && !c.repaired, bgCorrect: ok, bgPick: i }); // bgPick: 틀린 배경 복기용(v4)
     c.step = "result"; save();
     setTimeout(() => renderArtifact(), 400);
-  } else if (c.step === "era1") {
+  } else if (c.step === "era") {
     card.querySelectorAll(".choice").forEach((b) => { b.disabled = true; });
-    if (btn.dataset.v === "no") { btn.classList.add("right"); c.step = "era2"; save(); setTimeout(() => renderArtifact(), 350); }
-    else { btn.classList.add("wrong"); card.classList.add("shake"); pushResult(a, { eraCorrect: false }); c.step = "result"; save(); setTimeout(() => renderArtifact(), 400); }
-  } else if (c.step === "era2") {
-    card.querySelectorAll(".choice").forEach((b) => { b.disabled = true; });
-    const ok = btn.dataset.v === a.trueEra;
+    const i = Number(btn.dataset.i);
+    const ok = i === a.eraQ.answer;
     btn.classList.add(ok ? "right" : "wrong");
-    pushResult(a, { eraCorrect: ok }); c.step = "result"; save();
+    if (!ok) card.classList.add("shake");
+    pushResult(a, { eraCorrect: ok, eraPick: i }); c.step = "result"; save();
     setTimeout(() => renderArtifact(), 400);
   }
 }
@@ -458,6 +470,7 @@ function startDig() {
   if (S.dig.done) { renderNote(); show("scrNote"); return; }
   show("scrDig");
   renderBlocks();
+  if (S.dig.cur && (S.dig.cur.step === "era1" || S.dig.cur.step === "era2")) S.dig.cur.step = "era";
   if (S.dig.cur) renderArtifact(false); else $("artCard").hidden = true;
 }
 

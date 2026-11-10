@@ -36,7 +36,7 @@ for (const l of LAYERS) {
   out.push("|---|---|---|---|---|");
   Logic.artifactsOf(l.id, ARTIFACTS).forEach((a) => {
     if (a.intruder) {
-      out.push(`| ${a.emoji} ${a.name} (흘러든 유물) | ${a.page} | ${a.clue} | 이 층의 시대일까? → 아니, **${ERAS[a.trueEra].name}** | ${a.note} |`);
+      out.push(`| ${a.emoji} ${a.name} (흘러든 유물) | ${a.page} | ${a.clue} | 시대·까닭 4지선다 → **${a.eraQ.options[a.eraQ.answer]}** | ${a.note} |`);
     } else {
       out.push(`| ${a.emoji} ${a.name} | ${a.page} | ${a.clue} | ${a.bg.q} → **${a.bg.options[a.bg.answer]}** | ${a.note} |`);
     }

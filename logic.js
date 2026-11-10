@@ -37,7 +37,7 @@
 
   /* 이름 맞히기 보기: 층에서 먼저 캔 2개(흘러든 유물 제외)는 2지선다, 그다음부터 4지선다(단계 상승). foundCount = 그 층에서 이미 이름을 맞혀 본 유물 수. */
   function nameChoices(art, foundCount, seedStr) {
-    var n = foundCount < 2 ? 2 : 4;
+    var n = 4; // 2026-11-10: 처음 2개 2지선다를 없앰(효니 «질문이 너무 쉽다»). foundCount는 인자 호환용
     var ds = art.distractors.slice(0, n - 1);
     return shuffle([art.name].concat(ds), seeded(seedStr + ":" + art.id));
   }
