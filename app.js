@@ -501,6 +501,7 @@ function renderNote() {
   if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; renderClassMuseum("cmNote"); }
   book.scrollLeft = 0;
   updatePageNum();
+  syncPadlet();
 }
 /* 다시 볼 유물 = 배경을 틀린 것(힌트·결과 화면 문구와 같은 기준. 흘러든 유물은 글쓰기 대상이 아니라 뺀다) */
 function needsReview(r) { return !r.intruder && !r.bgCorrect; }
@@ -543,6 +544,43 @@ function flipPage(d) {
   setTimeout(updatePageNum, 350);
 }
 
+/* ── 제출하고 복사하기 → 패들렛 (제출 안 누르고 패들렛으로 가는 일을 막는다. 2026-11-10) ── */
+function ensureUrlScheme(u) { u = String(u || "").trim(); return u && !/^https?:\/\//i.test(u) ? "https://" + u : u; }
+/* 패들렛 링크는 백엔드 학년정보(포트폴리오)에서 가져온다(반 정보가 든 링크라 레포에 적지 않는다). */
+async function loadPadletUrl(grade, ban) {
+  try {
+    const res = await fetch(CONFIG.SHEET_WEBAPP_URL + "?mode=curriculum");
+    const json = await res.json();
+    const pf = json && json.grades && json.grades[String(grade)] && json.grades[String(grade)].portfolio;
+    if (!pf) return "";
+    return ensureUrlScheme(pf.urlByBan ? (pf.urlByBan[ban] || pf.urlByBan[String(ban)] || "") : (pf.url || ""));
+  } catch (e) { return ""; }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("data-no-draft", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e2) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+function syncPadlet() {
+  const a = $("padletBtn"), c = $("copyBtn"), m = $("padletMsg");
+  if (!a) return;
+  const done = !!(S.dig && S.dig.submitted);
+  c.hidden = !(done && S.outText); // 제출한 글은 태블릿에 남기지 않아서, 새로고침하면 다시 복사는 못 한다
+  if (!done) { a.hidden = true; m.textContent = S.padletUrl ? "제출하면 패들렛 버튼이 열려." : ""; }
+  else if (S.padletUrl) { a.href = S.padletUrl; a.hidden = false; m.textContent = ""; }
+  else { a.hidden = true; m.textContent = "패들렛 링크는 선생님이 알려 준 곳을 써 줘."; }
+}
+async function copyOut() {
+  const ok = S.outText ? await copyText(S.outText) : false;
+  $("noteMsg").textContent = ok ? "복사했어. 패들렛에 붙여 넣어 줘." : "복사가 안 됐어. 한 번 더 눌러 줘.";
+}
+
 async function submitDig() {
   if (S.sending || (S.dig && S.dig.submitted)) return;
   const text = $("writeText").value.trim();
@@ -563,18 +601,23 @@ async function submitDig() {
     choicesJson: JSON.stringify({ team: team, teamCode: code, quiz: S.quiz ? S.quiz.ranking || null : null, mode: S.mode, score: sc, results: S.dig.results, pick: pick, ts: new Date().toISOString() })
   };
   Object.assign(payload, FocusGuard.payload());
+  const out = "[" + pick + "] " + text;
+  const copyP = Promise.race([copyText(out), new Promise((r) => setTimeout(() => r(false), 3000))]); // 클릭 직후에 복사를 먼저 시작해야 브라우저가 허용한다
   S.sending = true; $("submitDig").disabled = true; $("submitDig").textContent = "보내는 중…";
   try {
     await postToSheet(payload);
   } catch (e) {
     $("noteErr").textContent = e.locked ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘.";
-    S.sending = false; $("submitDig").disabled = false; $("submitDig").textContent = "발굴 수첩 제출";
+    S.sending = false; $("submitDig").disabled = false; $("submitDig").textContent = "제출하고 복사하기";
     return;
   }
+  const copied = await copyP;
   S.sending = false; S.dig.submitted = true; save();
+  S.outText = out; // 메모리에만 둔다(공용 태블릿에 글을 남기지 않는다)
   if (window.DraftGuard) DraftGuard.clear(); // 저장 성공 → 임시저장 삭제
   $("submitDig").textContent = "제출 완료";
-  $("noteMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 내 점수 " + sc.score + "점이 팀 평균에 들어가.";
+  $("noteMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 내 점수 " + sc.score + "점이 팀 평균에 들어가. " + (copied ? "글도 복사했어. 패들렛에 붙여 넣어 줘." : "복사가 안 됐으니 «다시 복사»를 눌러 줘.");
+  syncPadlet();
   renderClassMuseum("cmNote", true);
 }
 
@@ -948,6 +991,7 @@ function setStudent(sid, name) {
   S.sid = String(sid || "").trim(); S.name = String(name || "").trim();
   if (/^\d{5}$/.test(S.sid)) { S.grade = Number(S.sid[0]); S.ban = Number(S.sid.slice(1, 3)); S.no = Number(S.sid.slice(3)); }
   load();
+  if (S.grade && S.ban) loadPadletUrl(S.grade, S.ban).then((u) => { S.padletUrl = u; syncPadlet(); });
   const scr = new URLSearchParams(location.search).get("screen");
   FocusGuard.start({ key: (scr === "escape" ? CONFIG.GAME_ESCAPE : CONFIG.GAME_DIG) + ":" + S.sid }); // 작성 중 화면 이탈·붙여넣기 기록
   if (window.DraftGuard) DraftGuard.start({ key: CONFIG.GAME_DIG, sid: S.sid }); // 발굴 수첩 글 임시저장
@@ -974,6 +1018,7 @@ function init() {
   $("goEscape").addEventListener("click", renderEscapeEntry);
   $("startEscape").addEventListener("click", startEscape);
   $("submitDig").addEventListener("click", submitDig);
+  $("copyBtn").addEventListener("click", copyOut);
   $("submitEscape").addEventListener("click", submitEscape);
   $("hintToggle").addEventListener("click", () => { $("hintBox").hidden = !$("hintBox").hidden; });
   $("writeText").addEventListener("input", () => { $("writeCount").textContent = Logic.countChars($("writeText").value); });

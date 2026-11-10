@@ -72,6 +72,7 @@ button,input,select,textarea{font-family:var(--sans);font-size:1rem}
 .pixel-title{font-size:1.6rem;color:var(--wood-deep);text-shadow:2px 2px 0 var(--stone-deep)}
 .lead{font-size:1.05rem}
 
+.btn[hidden]{display:none}
 .btn{display:inline-block;border:2px solid var(--wood);background:var(--page);color:var(--ink);border-radius:4px;padding:.6rem 1rem;cursor:pointer;min-height:2.8rem;font-weight:700;box-shadow:2px 2px 0 var(--wood-deep)}
 .btn.primary{background:var(--brass);border-color:var(--brass-deep);color:#2a1f16;box-shadow:2px 2px 0 var(--brass-deep)}
 .btn.primary:disabled{opacity:.5;cursor:not-allowed}
