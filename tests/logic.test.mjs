@@ -42,7 +42,12 @@ test("층마다 유물 6개 + 흘러든 유물 1개, 쪽수·보기·배경·복
     for (const a of arts) {
       assert.ok(/쪽/.test(a.page), a.id + " 쪽수");
       assert.ok(a.clue && !a.clue.includes(a.name), a.id + " 단서에 이름이 들어 있음");
-      if (a.intruder) { assert.ok(ERAS[a.trueEra] && a.trueEra !== a.layer, a.id); continue; }
+      if (a.intruder) {
+        assert.ok(ERAS[a.trueEra] && a.trueEra !== a.layer, a.id);
+        assert.ok(a.eraQ && a.eraQ.options.length === 4 && a.eraQ.options[a.eraQ.answer], a.id + " eraQ 4지선다");
+        assert.ok(a.eraQ.options[a.eraQ.answer].startsWith(ERAS[a.trueEra].short.split("·")[0]), a.id + " eraQ 정답이 진짜 시대로 시작");
+        continue;
+      }
       assert.equal(a.distractors.length, 3, a.id + " 오답 보기 3개");
       assert.equal(a.bg.options.length, 4, a.id + " 배경 보기 4개");
       assert.ok(a.bg.answer >= 0 && a.bg.answer < 4, a.id);
@@ -65,8 +70,8 @@ test("블록 배치: 층 유물 7개가 10칸에 한 번씩, 나머지는 돌멩
 
 test("이름 보기는 층에서 먼저 캔 2개가 2지선다, 그다음 4지선다, 정답 포함, 학번이 같으면 순서 고정", () => {
   const arts = Logic.artifactsOf("goryeo", ARTIFACTS).filter(a => !a.intruder);
-  assert.equal(Logic.nameChoices(arts[4], 0, "30501").length, 2);
-  assert.equal(Logic.nameChoices(arts[1], 1, "30501").length, 2);
+  assert.equal(Logic.nameChoices(arts[4], 0, "30501").length, 4); // 2026-11-10: 처음부터 4지선다
+  assert.equal(Logic.nameChoices(arts[1], 1, "30501").length, 4);
   assert.equal(Logic.nameChoices(arts[0], 2, "30501").length, 4);
   const c1 = Logic.nameChoices(arts[3], 3, "30501"), c2 = Logic.nameChoices(arts[3], 3, "30501");
   assert.equal(c1.join("|"), c2.join("|"));

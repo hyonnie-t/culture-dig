@@ -217,11 +217,15 @@ textarea{resize:vertical;min-height:5.5rem}
 .chip.wrong{background:#f8e3df;border-color:var(--err)}
 
 /* ───────── 발굴 수첩 (가죽 표지·종이·Scroll Snap) ───────── */
-.book-nav{display:flex;justify-content:center;align-items:center;gap:1rem;margin-bottom:.5rem}
+.book-nav{display:flex;justify-content:center;align-items:center;gap:1rem;margin-bottom:.5rem;position:sticky;top:3.4rem;z-index:5;background:var(--floor);padding:.35rem 0}
+.book-nav .btn{min-width:3.2rem;min-height:2.8rem;font-size:1.15rem}
 .pg-num{font-size:1.1rem;min-width:4rem;text-align:center;color:var(--wood-deep)}
 .book{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;gap:0;border:4px solid #3a1f12;border-radius:6px;background:#3a1f12;box-shadow:4px 4px 0 var(--stone-deep);-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .book::-webkit-scrollbar{display:none}
-.page{flex:0 0 100%;scroll-snap-align:start;min-height:26rem;position:relative}
+.page{flex:0 0 100%;scroll-snap-align:start;position:relative;overflow-y:auto;overscroll-behavior:contain}
+/* 2026-11-10: 태블릿에서 수첩이 화면보다 길어 ◀▶가 안 보였다 → 수첩 높이 = 화면 남은 높이, 긴 쪽은 쪽 안에서 위아래로 */
+.book{height:calc(100dvh - 11.5rem);min-height:20rem}
+@supports not (height:100dvh){.book{height:calc(100vh - 11.5rem)}}
 .page-in{padding:1.2rem 1.3rem 1.4rem}
 /* 가죽 표지 */
 .page-cover{background:#5a2f1a;background-image:radial-gradient(rgba(0,0,0,.25) 1px,transparent 1px),radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:6px 6px,9px 9px;color:#f6e7c7;display:flex;align-items:center;justify-content:center;text-align:center}
@@ -234,10 +238,10 @@ textarea{resize:vertical;min-height:5.5rem}
 .page-paper{background:#fbf6e8;background-image:radial-gradient(rgba(120,90,40,.06) 1px,transparent 1px);background-size:7px 7px;color:var(--ink)}
 .page-paper::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:repeating-linear-gradient(0deg,#3a1f12 0 10px,#5a2f1a 10px 20px)}
 .page-paper .page-in{padding-left:1.8rem}
-.page-paper .p-title{font-family:var(--book);font-weight:700;font-size:1.4rem;margin:0 0 .4rem;color:var(--wood-deep)}
+.page-paper .p-title{font-family:var(--book);font-weight:700;font-size:1.25rem;margin:0 0 .4rem;color:var(--wood-deep)}
 .page-paper .p-title .p-page{font-size:1rem;color:var(--muted);font-family:var(--sans);font-weight:400}
 .p-body{display:grid;grid-template-columns:1fr;gap:.9rem}
-@media (min-width:768px){.p-body{grid-template-columns:11rem 1fr}}
+@media (min-width:768px){.p-body{grid-template-columns:10rem 1fr}}
 /* 테이프로 붙인 사진 */
 .taped{position:relative;background:#fff;padding:5px 5px 8px;box-shadow:2px 3px 6px rgba(0,0,0,.25);transform:rotate(-1.5deg);cursor:zoom-in;aspect-ratio:4/3;overflow:visible}
 .taped img,.taped svg{width:100%;height:100%;object-fit:cover;display:block}
@@ -435,3 +439,7 @@ details.rules ol{margin:.4rem 0 0;padding-left:1.3rem}
 .lr-body{min-width:0;line-height:1.45}
 .lr-row{display:block;margin-top:.15rem}
 .lr-more{margin:.4rem 0 0}
+
+/* 2026-11-10: 옛 버그로 잠긴 유물 칸(구멍만 나고 결과 없음) — 눌러서 다시 꺼낸다 */
+.blk.hole.orphan{cursor:pointer;outline:3px dashed var(--brass);outline-offset:-5px}
+.blk.hole.orphan .blk-state{font-size:.8rem}
