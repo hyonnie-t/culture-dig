@@ -66,7 +66,13 @@ const Scene = (function () {
     const r = room(), s = st(r);
     save(); draw(); closeModal();
     show("scrScene"); placeSay(); panTo(0);
-    if (!s.entered) { s.entered = true; save(); say(conf().enter); }
+    if (!s.entered && i !== S.esc.role) { // 35분 안에 끝나게(2026-11-12 효니): 도우러 간 방은 어둠·숨은 물건 찾기를 건너뛴다 — 등은 켜져 있고, 서랍 열쇠·첫 재료는 가방에
+      s.entered = true; s.lit = true;
+      conf().hide.forEach((h) => { s.got[h] = true; });
+      [SCENE_ITEMS.key ? "key" : null, conf().mats[0]].forEach((id) => { if (id) give(s, id); });
+      save(); draw();
+      say((S.solo ? "야간 관리인이" : "먼저 온 팀원이") + " 등을 켜 두고, 서랍 열쇠와 재료 하나를 찾아 두었다. 가방을 열어 보고 바로 자물쇠로 가자.");
+    } else if (!s.entered) { s.entered = true; save(); say(conf().enter); }
     else say(s.lit ? (i + 1) + "실로 돌아왔다." : conf().enter);
   }
   function badgeOf(name) {
