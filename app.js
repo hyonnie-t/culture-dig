@@ -668,6 +668,7 @@ const PUZ_ICON = { match: "🏺", choice: "📜", order: "🪜", key: "🔑" };
 function renderEscapeEntry() {
   if (!S.esc) S.esc = newEsc();
   if (S.esc.start) { renderRooms(); show("scrRooms"); return; }
+  if (!S.esc.introSeen) { playIntro(); return; }
   const tm = teamOf(S.team);
   $("escFirstLine").textContent = S.solo ? "🧑 개인용(?solo=1) — 모든 전시실이 열려 있어" : "📱 내 태블릿으로 «담당 전시실» 하나를 맡는다";
   $("escTeam").innerHTML = S.solo ? "개인용: 기록 이름은 <b>" + esc(Logic.soloCode(S.sid)) + "</b>" :
@@ -716,6 +717,64 @@ function renderEscReview() {
   box.hidden = false;
   box.querySelectorAll(".lr-img").forEach((el) => bindZoom(el, artById(el.dataset.id)));
   reveal(box);
+}
+/* 시작 이야기(컷신, 2026-11-12 효니 «게임 스토리 몰입감»): 방탈출에 처음 들어올 때 한 번 보여 준다(S.esc.introSeen).
+ * 장면 6개, 탭·«다음»으로 넘김, 글자는 한 글자씩(탭하면 바로 다 보임). 마지막 장면이 «숫자를 건넬 때 그 방 유물을 설명» 규칙 —
+ * 정보 교환을 서로 가르치기로 바꾸는 학습 장치다(점수와는 상관없음). 입장 화면 «🎬 이야기 다시 보기»로 다시 볼 수 있다(칠판에 띄울 때). */
+const INTRO_ART = ["g1", "g2", "j2", "j4"]; // 전시실 1~4실을 대표하는 유물(도트) — 청자·대장경판·앙부일구·분청사기
+const reduceMotion = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function introScenes() {
+  const rooms = roomsNow();
+  const roomRow = rooms.map((r, i) => '<span class="iv-room ' + r.era + '" style="--d:' + (i * 0.35) + 's"><b>' + r.emoji + '</b><small>' + (i + 1) + '실<br>' + esc(r.title.replace(/ 전시실$/, "")) + '</small></span>').join("");
+  return [
+    { vis: '<div class="iv-ground">' + INTRO_ART.map((id, i) => '<span class="iv-art" style="--d:' + (i * 0.3) + 's">' + pixelSvg(id) + '</span>').join("") + '</div>',
+      txt: "지난 시간, 발굴단은 땅속에서 고려와 조선 전기의 유물을 캐냈다." },
+    { vis: '<div class="iv-rooms">' + roomRow + '</div>',
+      txt: "캐낸 유물은 박물관 전시실 " + rooms.length + "곳에 나뉘어 전시되었다." },
+    { vis: '<div class="iv-dark"><span class="iv-bolt">⚡</span><span class="iv-lock">🔒</span></div>', dark: true,
+      txt: "개관 전날 밤. 갑자기 불이 꺼지고, 수장고 문이 저절로 잠겼다. 발굴단은 박물관 안에 갇혔다." },
+    { vis: '<div class="iv-vault"><span class="iv-wheel"></span><span class="iv-code">' + rooms.map(() => "<i>?</i>").join("") + '</span></div>',
+      txt: "문을 여는 방법은 하나. 전시실마다 숨은 열쇠 숫자를 찾아, 우리 팀 순서대로 맞추는 것." },
+    { vis: '<div class="iv-tablet"><span class="iv-screen">' + rooms.map((r, i) => '<span class="iv-mini' + (i === 0 ? " on" : "") + '">' + (i === 0 ? r.emoji : "🔒") + '</span>').join("") + '</span></div>',
+      txt: S.solo ? "너는 혼자 남은 발굴단. 모든 전시실이 열려 있지만, 네 방의 숫자를 혼자 다 찾아야 한다." : "그런데 내 태블릿에서는 내 담당 전시실 하나만 열린다. 다른 방 숫자는 그 방을 맡은 팀원만 안다." },
+    { vis: '<div class="iv-talk"><span class="iv-bub a">«3실 숫자는 ○야»</span><span class="iv-bub b">«앙부일구는 해 그림자로 시간을 알려 줘»</span></div>',
+      txt: "박물관의 규칙: 숫자를 건넬 때는 그 방 유물 하나를 꼭 설명해 줄 것. 유물을 이해한 발굴단만 이 박물관을 나갈 수 있다.", last: true }
+  ];
+}
+let introAt = 0, introTyping = null, introList = [];
+function playIntro() {
+  introList = introScenes(); introAt = 0;
+  show("scrIntro");
+  drawIntro();
+}
+function drawIntro() {
+  const sc = introList[introAt];
+  const stage = $("introStage");
+  stage.classList.toggle("dark", !!sc.dark);
+  const vis = $("introVis");
+  vis.innerHTML = sc.vis;
+  vis.classList.remove("in"); void vis.offsetWidth; vis.classList.add("in"); // 장면이 바뀔 때마다 다시 등장
+  $("introDots").innerHTML = introList.map((_, i) => '<i class="' + (i === introAt ? "on" : i < introAt ? "past" : "") + '"></i>').join("");
+  $("introNext").textContent = sc.last ? "발굴단, 입장! ▶" : "다음 ▶";
+  $("introSkip").hidden = !!sc.last;
+  typeIntro(sc.txt);
+}
+function typeIntro(txt) {
+  const el = $("introTxt");
+  if (introTyping) { clearInterval(introTyping); introTyping = null; }
+  if (reduceMotion()) { el.textContent = txt; return; }
+  let n = 0; el.textContent = ""; el.dataset.full = txt;
+  introTyping = setInterval(() => { n++; el.textContent = txt.slice(0, n); if (n >= txt.length) { clearInterval(introTyping); introTyping = null; } }, 45);
+}
+function introNext() {
+  if (introTyping) { clearInterval(introTyping); introTyping = null; $("introTxt").textContent = introList[introAt].txt; return; } // 첫 탭은 글자 다 보이기
+  if (introAt < introList.length - 1) { introAt++; drawIntro(); return; }
+  endIntro();
+}
+function endIntro() {
+  if (introTyping) { clearInterval(introTyping); introTyping = null; }
+  S.esc.introSeen = true; save();
+  renderEscapeEntry();
 }
 function startEscape() {
   if (S.esc.role < 0) return;
@@ -799,7 +858,7 @@ function renderPuzzle() {
 
   if (solved) {
     h.push('<p class="result-line good">✓ 해결한 퍼즐이야.</p>');
-    if (p.type === "key") h.push('<div class="key-reveal">🔑 ' + (S.esc.roomIdx + 1) + '실 열쇠 숫자: ' + esc(p.answer) + '</div><p class="muted">팀원들에게 «' + (S.esc.roomIdx + 1) + '실은 ' + esc(p.answer) + '»라고 알려 줘. 너도 다른 방 숫자를 물어 모아.</p>');
+    if (p.type === "key") h.push('<div class="key-reveal">🔑 ' + (S.esc.roomIdx + 1) + '실 열쇠 숫자: ' + esc(p.answer) + '</div><p class="muted">팀원들에게 «' + (S.esc.roomIdx + 1) + '실은 ' + esc(p.answer) + '»라고 알려 줘. <b>박물관 규칙: 숫자와 함께 이 방 유물 하나를 설명해 주기.</b> 너도 다른 방 숫자를 물어 모아 — 숫자를 받을 때 그 방 이야기도 들어.</p>');
   } else if (p.type === "match") {
     const rights = orderOf(p.pairs.length, p.id + ":" + seed, true);
     st.rights = rights; st.map = st.map || {}; st.selLeft = null;
@@ -1074,6 +1133,10 @@ function init() {
   $("goDig").addEventListener("click", startDig);
   $("goEscape").addEventListener("click", renderEscapeEntry);
   $("startEscape").addEventListener("click", startEscape);
+  $("introNext").addEventListener("click", (e) => { e.stopPropagation(); introNext(); });
+  $("introSkip").addEventListener("click", (e) => { e.stopPropagation(); endIntro(); });
+  $("introStage").addEventListener("click", (e) => { if (!e.target.closest("button")) introNext(); }); // 화면 아무 데나 탭해도 넘어간다
+  $("replayIntro").addEventListener("click", () => { if (S.esc) S.esc.introSeen = false; playIntro(); });
   $("submitDig").addEventListener("click", submitDig);
   $("copyBtn").addEventListener("click", copyOut);
   $("submitEscape").addEventListener("click", submitEscape);

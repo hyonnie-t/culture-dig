@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261110r">
+<link rel="stylesheet" href="style.css?v=20261112a">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -150,6 +150,19 @@
     </div>
   </section>
 
+  <!-- 방탈출 시작 이야기(컷신, 2026-11-12): 처음 입장할 때 한 번. 탭하면 다음 장면 -->
+  <section id="scrIntro" class="scr intro" hidden>
+    <div class="intro-stage" id="introStage">
+      <div class="intro-vis" id="introVis" aria-hidden="true"></div>
+      <p class="intro-txt" id="introTxt" aria-live="polite"></p>
+      <div class="intro-nav">
+        <span class="intro-dots" id="introDots" aria-hidden="true"></span>
+        <button type="button" class="btn ghost small intro-skip" id="introSkip">건너뛰기</button>
+        <button type="button" class="btn primary" id="introNext">다음 ▶</button>
+      </div>
+    </div>
+  </section>
+
   <!-- 방탈출 입구 -->
   <section id="scrEscape" class="scr" hidden>
     <div class="card placard">
@@ -163,6 +176,7 @@
       <p class="muted" id="roleNote"></p>
       <p class="muted">힌트를 보거나 틀리면 그 퍼즐은 1점(안 보고 한 번에 풀면 3점). 담당 방을 다 풀면 다른 방 하나를 도우러 갈 수 있어(+2).</p>
       <button class="btn primary" id="startEscape" type="button">입장 · 시간 시작</button>
+      <button class="btn ghost small" id="replayIntro" type="button">🎬 이야기 다시 보기</button>
     </div>
   </section>
 
@@ -209,9 +223,9 @@
 <script src="focus_guard.js?v=20261110r"></script>
 <script src="draft_guard.js?v=20261110r"></script>
 <script src="glossary.js?v=20261110r"></script>
-<script src="data.js?v=20261110r"></script>
+<script src="data.js?v=20261112a"></script>
 <script src="pixels.js?v=20261110r"></script>
 <script src="logic.js?v=20261110r"></script>
-<script src="app.js?v=20261112a"></script>
+<script src="app.js?v=20261112b"></script>
 </body>
 </html>
