@@ -121,3 +121,5 @@ button.sc-slot{cursor:pointer}
 @media (min-width:701px){.sc-pan{display:none}}
 /* 폰을 눕혔을 때(높이가 낮음): 그림을 화면 높이에 맞춘다 */
 @media (max-height:520px) and (min-width:701px){.sc-stage{width:min(100%,calc((100dvh - 3.5rem)*1.488))}}
+/* 폰: 손전등 빛을 넓게(화면이 작아 빛이 좁으면 아무것도 안 보인다), 처음 빛은 왼쪽 등 근처에 */
+@media (max-width:700px){.sc-stage{--lx:28%;--ly:58%}.sc-stage.dark .sc-darkness{background:radial-gradient(circle at var(--lx) var(--ly),rgba(255,236,170,.12) 0,rgba(4,6,14,.20) 16%,rgba(3,5,12,.90) 32%,rgba(2,3,8,.96) 100%)}}
