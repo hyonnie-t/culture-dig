@@ -43,6 +43,9 @@ window.E2E = (function () {
     q('.room-tile[data-i="' + i + '"]').click(); await sleep(80);
     if (!ok(S.screen === "scrScene", (i + 1) + "실 입장")) return;
     const sc = () => S.esc.sc[r.id];
+    if (i !== S.esc.role) { // 도우러 간 방(2026-11-12 35분 맞춤): 등이 켜져 있고 열쇠·첫 재료가 가방에
+      ok(sc().lit && sc().inv.indexOf("key") >= 0 && sc().inv.indexOf(c.mats[0]) >= 0 && sc().inv.indexOf("flint") < 0, (i + 1) + "실(도움) 바로 시작: " + sc().inv.join(","));
+    } else {
     // 어두울 때: 숨은 곳이 아닌 자리는 막힌다
     spot("safe").click(); ok(/어두워서/.test(await sayNow()), (i + 1) + "실 어두울 때 금고 막힘");
     c.hide.forEach((h) => spot(h).click());
@@ -50,6 +53,7 @@ window.E2E = (function () {
     spot("lantern").click(); ok(!sc().lit, (i + 1) + "실 부싯돌을 안 고르면 등이 안 켜짐");
     pickItem("flint"); spot("lantern").click(); await sleep(60);
     ok(sc().lit && sc().inv.indexOf("flint") < 0, (i + 1) + "실 등 켜짐");
+    }
     // 진열장(퍼즐1) → 재료2
     spot("case").click(); await solve(r.puzzles[0]); await sleep(50);
     ok(sc().inv.indexOf(c.mats[1]) >= 0, (i + 1) + "실 재료2 얻음");

@@ -359,7 +359,7 @@ test("7판 장면형: 문제 변형 — 모양이 맞고, 뽑아도 id·type이 
       assert.equal(v.id, p.id); assert.equal(v.type, p.type); assert.equal(!!v.secret, !!p.secret);
       seen.add(JSON.stringify([v.q, v.options, v.pairs, v.items, v.answer]));
     }
-    assert.ok(seen.size >= 2, p.id + " 40명에게 같은 문제만 나온다");
+    assert.ok(seen.size >= Math.min(3, alts.length + 1), p.id + " 40명에게 나오는 문제가 너무 적다: " + seen.size);
   });
 });
 
