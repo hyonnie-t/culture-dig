@@ -12,7 +12,7 @@
 .sc-tools{display:flex;gap:.3rem;flex-wrap:wrap}
 
 .sc-stage-wrap{overflow-x:auto;background:#05070f;border:3px solid #05070f}
-.sc-stage{position:relative;aspect-ratio:1500/1008;width:min(100%,calc((100dvh - 19.5rem)*1.488));min-width:min(36rem,160vw);margin:0 auto;overflow:hidden;--lx:50%;--ly:60%;--gx:10%;--gy:35%;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
+.sc-stage{position:relative;aspect-ratio:1500/1008;width:min(100%,calc((100dvh - 22rem)*1.488));min-width:min(36rem,160vw);margin:0 auto;overflow:hidden;--lx:50%;--ly:60%;--gx:10%;--gy:35%;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
 .sc-stage img#scBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 .sc-darkness{position:absolute;inset:0;pointer-events:none}
 .sc-stage.dark .sc-darkness{background:radial-gradient(circle at var(--lx) var(--ly),rgba(255,236,170,.10) 0,rgba(4,6,14,.22) 9%,rgba(3,5,12,.93) 19%,rgba(2,3,8,.97) 100%)}
@@ -107,7 +107,7 @@ button.sc-slot{cursor:pointer}
   .sc-title{font-size:1rem;min-width:0;flex:1 1 9rem}
   .sc-head .btn.small{padding:.25rem .5rem;min-height:2.4rem}
   .sc-stage-wrap{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
-  .sc-stage{width:auto;min-width:0;height:min(46dvh,30rem);margin:0}
+  .sc-stage{width:auto;min-width:0;height:min(44dvh,30rem);margin:0}
   .sc-say.flow{position:static;border-radius:0;border-width:2px 3px;border-color:#05070f;border-top-color:var(--gold-deep);min-height:4.2rem;font-size:1rem;pointer-events:auto}
   .sc-say.flow:empty{display:block}
   .sc-slot{width:4.1rem;min-height:4.9rem}
@@ -123,3 +123,19 @@ button.sc-slot{cursor:pointer}
 @media (max-height:520px) and (min-width:701px){.sc-stage{width:min(100%,calc((100dvh - 3.5rem)*1.488))}}
 /* 폰: 손전등 빛을 넓게(화면이 작아 빛이 좁으면 아무것도 안 보인다), 처음 빛은 왼쪽 등 근처에 */
 @media (max-width:700px){.sc-stage{--lx:28%;--ly:58%}.sc-stage.dark .sc-darkness{background:radial-gradient(circle at var(--lx) var(--ly),rgba(255,236,170,.12) 0,rgba(4,6,14,.20) 16%,rgba(3,5,12,.90) 32%,rgba(2,3,8,.96) 100%)}}
+
+/* 7판 보강(2026-11-12 밤, 효니가 준 역사 앱 9개를 다시 보고): 지금 할 일 한 줄·이야기 그림 카드·담당 방 그림 카드 */
+.sc-goal{margin:0;background:#1b2444;color:#ffe9a8;border:3px solid #05070f;border-top:0;border-bottom:0;padding:.35rem .6rem;font-size:1rem;line-height:1.4;font-weight:700}
+.sc-goal.flash{animation:scGoal .7s ease}
+@keyframes scGoal{from{background:#a87a1e;color:#fff}to{background:#1b2444;color:#ffe9a8}}
+.intro-stage.night{background:linear-gradient(rgba(8,12,28,.50),rgba(8,12,28,.80) 45%,rgba(8,12,28,.95)),var(--intro-bg) center/cover;border-color:#a87a1e;box-shadow:0 0 0 3px #05070f,0 10px 30px rgba(0,0,0,.45)}
+.intro-stage.night.dark{background:linear-gradient(rgba(3,5,12,.86),rgba(3,5,12,.96)),var(--intro-bg) center/cover}
+.intro-stage.night .intro-txt{background:rgba(8,12,28,.82);border:2px solid #a87a1e;border-radius:6px;padding:.7rem .9rem}
+.intro-stage.night .intro-dots i{background:#3a4263}.intro-stage.night .intro-dots i.on{background:#e6b450}.intro-stage.night .intro-dots i.past{background:#a87a1e}
+#scrEscape #rolePick{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.5rem}
+#scrEscape .role-chip{min-height:6rem;border-radius:8px;border:3px solid #6b7399;color:#f6e7c7;font-weight:700;text-align:left;display:flex;align-items:flex-end;padding:.5rem .6rem;line-height:1.35;background:linear-gradient(rgba(8,12,28,.15),rgba(8,12,28,.88) 70%),var(--tile-bg,none) center 35%/cover,#0c1224;text-shadow:0 2px 0 #05070f}
+#scrEscape .role-chip.sel{border-color:#ffd867;box-shadow:0 0 0 2px #05070f,0 0 16px rgba(230,180,80,.75);color:#ffd867}
+#scrEscape .role-chip.sel::after{content:"✓ 내 담당";margin-left:auto;align-self:flex-start;background:#e6b450;color:#2a1f16;border-radius:999px;padding:0 .5rem;font-size:.85rem;text-shadow:none;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.sc-goal.flash{animation:none}}
+/* 폰: 방 안에서는 앱 머리띠를 접어 그림·가방이 한 화면에 들어오게(점수는 복도에서 본다) */
+@media (max-width:700px){body:has(#scrScene:not([hidden])) #topbar{display:none}.sc-goal{font-size:.95rem;padding:.3rem .5rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sc-stage{height:min(42dvh,30rem)}}
