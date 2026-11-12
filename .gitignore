@@ -1,0 +1,7 @@
+# 공통 틀(2026-11-12): 로컬 도구 설정·캐시는 올리지 않는다
+.claude/
+node_modules/
+.DS_Store
+# .impeccable/은 config.json만 이미 올라가 있어 그 파일만 남긴다
+.impeccable/*
+!.impeccable/config.json
