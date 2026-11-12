@@ -663,12 +663,12 @@ function roomOpen(i) {
   return i === S.esc.role || helpsNow().indexOf(i) >= 0;
 }
 /* 도우러 가기(7판): 담당 방의 봉인 3개(퍼즐 1~3)를 풀면 한 방을 열 수 있다 — 금고 무늬가 다른 방 벽에 있어서, 빈 방(결석)의 무늬를 보러 가야 할 수 있다.
- * 도운 방을 끝내면 또 한 방을 열 수 있다(두 사람이 같은 방을 골라 막히는 일을 막는다). S.esc.help = 처음 도운 방(제출 기록용). */
+ * 그 뒤로는 다른 방도 더 열 수 있다 — «도운 방을 끝내야 다음 방»으로 묶었더니 맡은 방이 2개 이하인 팀이 막혔다(검토 2026-11-12:
+ * 도운 방의 금고가 또 다른 빈 방의 벽을 요구한다). S.esc.help = 처음 도운 방(제출 기록용). */
 function helpsNow() { return S.esc.helps || (S.esc.helps = S.esc.help >= 0 ? [S.esc.help] : []); }
 function canHelp() {
   const rooms = roomsNow();
-  if (S.solo || S.esc.role < 0 || Scene.sealCount(rooms[S.esc.role]) < 3) return false;
-  return helpsNow().every((i) => roomDone(rooms[i]));
+  return !S.solo && S.esc.role >= 0 && Scene.sealCount(rooms[S.esc.role]) >= 3;
 }
 const PUZ_ICON = { match: "🏺", choice: "📜", order: "🪜", key: "🔑" };
 /* 🕵️ 비밀 진열장(2026-11-12 효니 «넌센스 느낌·추가 문제, 점수에 넣어도 좋음»): 담당 방(개인용은 처음 고른 방)을 다 풀면 그 방 secrets 2개가 진열장 줄 끝에 열린다.
@@ -842,12 +842,12 @@ function tryOpenRoom(i) {
   }
   const mine = roomsNow()[S.esc.role];
   $("floorErr").textContent = (i + 1) + "실 문은 잠겨 있어. 열쇠 숫자와 벽 그림 뒤 무늬는 그 방을 맡은 친구에게 물어봐." +
-    (mine && Scene.sealCount(mine) < 3 ? " 내 담당 방의 봉인 3개를 풀면 한 방을 도우러 갈 수 있어." : " 도우러 간 방을 먼저 끝내면 또 한 방을 열 수 있어.");
+    (mine && Scene.sealCount(mine) < 3 ? " 내 담당 방의 봉인 3개를 풀면 다른 방을 도우러 갈 수 있어." : "");
 }
 /* 도우러 갈지 묻기 — 앱 안에 그린 확인 창(브라우저 confirm은 태블릿에서 화면을 가리고 시험도 어렵다) */
 function askHelp(i) {
   const box = $("floorAsk"); if (!box) return;
-  box.innerHTML = '<div class="ask-in"><p><b>' + (i + 1) + '실</b>을 도우러 갈까? 한 번에 한 방만 도울 수 있고, 그 방을 끝내야 다른 방을 또 열 수 있어.</p><button type="button" class="btn primary" id="askYes">도우러 간다</button> <button type="button" class="btn" id="askNo">아니</button></div>';
+  box.innerHTML = '<div class="ask-in"><p><b>' + (i + 1) + '실</b>을 도우러 갈까? 담당 친구가 있는 방이면 먼저 물어보고, 빈 방이면 네가 맡아 줘.</p><button type="button" class="btn primary" id="askYes">도우러 간다</button> <button type="button" class="btn" id="askNo">아니</button></div>';
   box.hidden = false;
   $("askNo").addEventListener("click", () => { box.hidden = true; });
   $("askYes").addEventListener("click", () => { box.hidden = true; helpsNow().push(i); if (S.esc.help < 0) S.esc.help = i; save(); openRoom(i); });

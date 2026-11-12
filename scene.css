@@ -87,3 +87,37 @@ button.sc-slot{cursor:pointer}
 .sc-head .btn.ghost{color:#f6e7c7;border-color:#6b7399;background:transparent}
 /* 태블릿 이상: 어두운 방에서는 손가락 끌기가 화면 스크롤이 아니라 손전등 움직임이 되게(폰은 그림을 옆으로 밀어 봐야 해서 그대로 둔다) */
 @media (min-width:700px){.sc-stage.dark{touch-action:none}}
+
+/* 입장 화면(7판): 낮의 안내판 대신 밤의 전시실을 깔고 금빛 테두리 — 들어가기 전부터 세계가 보이게 */
+#scrEscape .card.placard{background:linear-gradient(rgba(8,12,28,.74),rgba(8,12,28,.93) 45%),url(img/scene/room4.jpg) center top/cover;color:#f3e6c8;border:4px solid #a87a1e;box-shadow:0 0 0 3px #05070f,0 10px 30px rgba(0,0,0,.45);padding-top:1.4rem}
+#scrEscape .card.placard h2{font-family:var(--book);font-size:1.7rem;color:#ffd867;letter-spacing:.04em;text-shadow:0 2px 0 #05070f}
+#scrEscape .card.placard h3{color:#ffd867}
+#scrEscape .card.placard .muted{color:#cfc6b0}
+#scrEscape .card.placard .first-line{color:#e6b450}
+#scrEscape .card.placard .err{color:#ffb4a8}
+#scrEscape .card.placard b{color:#ffe9a8}
+#scrEscape .card.placard .btn.ghost{color:#f3e6c8;border-color:#6b7399;background:transparent}
+#scrEscape .card.placard .last-review{color:var(--ink)}
+
+/* 폰(7판, 2026-11-12 효니 «애들 폰으로 할 가능성이 높다»): 폭 700px 아래에서는 그림을 줄이지 않는다.
+ * 그림 높이를 화면에 맞추고(누를 자리가 손가락 크기를 지키게) 옆으로 밀어 방을 둘러본다. 이야기 줄은 그림 밖(가방 위)에 둔다. */
+@media (max-width:700px){
+  .scene-scr{margin-left:-.5rem;margin-right:-.5rem}
+  .sc-head{padding:.3rem .4rem;gap:.3rem}
+  .sc-title{font-size:1rem;min-width:0;flex:1 1 9rem}
+  .sc-head .btn.small{padding:.25rem .5rem;min-height:2.4rem}
+  .sc-stage-wrap{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .sc-stage{width:auto;min-width:0;height:min(46dvh,30rem);margin:0}
+  .sc-say.flow{position:static;border-radius:0;border-width:2px 3px;border-color:#05070f;border-top-color:var(--gold-deep);min-height:4.2rem;font-size:1rem;pointer-events:auto}
+  .sc-say.flow:empty{display:block}
+  .sc-slot{width:4.1rem;min-height:4.9rem}
+  .it-img{width:3rem;height:3rem}
+  .sc-pan{position:sticky;left:0;display:block;width:100vw;max-width:100%;text-align:center;color:#cfc6b0;font-size:.85rem;background:#05070f;padding:.15rem 0}
+  .sc-modal{padding:.4rem;align-items:flex-start}
+  .sc-modal-in{padding:.8rem .8rem;max-height:calc(100dvh - .8rem)}
+  .sc-sym{width:3.6rem;height:4.4rem}.sc-symbtn{width:3.9rem;height:4.6rem}
+  .sc-code-big{font-size:1.9rem}
+}
+@media (min-width:701px){.sc-pan{display:none}}
+/* 폰을 눕혔을 때(높이가 낮음): 그림을 화면 높이에 맞춘다 */
+@media (max-height:520px) and (min-width:701px){.sc-stage{width:min(100%,calc((100dvh - 3.5rem)*1.488))}}

@@ -20,7 +20,7 @@
   - 한 방의 흐름: 어두움(손전등 = 손가락을 따라가는 빛) → 숨은 곳 3곳에서 부싯돌·서랍 열쇠·재료1 → 부싯돌로 등 켜기 → 진열장(퍼즐1)→재료2 → 서랍(열쇠, 퍼즐2)→재료3 → 작업대에 재료 3개 조합 → 세 자리 번호 → 상자(번호, 퍼즐3) → 금고: 무늬 4개 + 퍼즐4 → 열쇠 숫자 → 🕵️ 비밀 칸 2곳(항아리·깔개 자리, 담당 방만).
   - **베낄 수 없게**: 학번 시드 = 문제 변형(`variants.js` `PUZZLE_ALTS` → `Logic.pickVariant`), 숨긴 자리(`Logic.hideLayout`), 작업대 번호(`Logic.comboCode`), 보기 순서. 팀 시드(반+팀, `Scene.teamSeed`) = 금고 무늬(`Logic.crossSymbols`), 열쇠 숫자(`Logic.teamKey`), 수장고 번호(`Logic.vaultCode2`, 순서는 `Logic.vaultOrder`). 퍼즐 4(숫자판)의 답과 열쇠 숫자는 다른 값이다.
   - **엇갈린 단서**(팀 협력): i실 금고의 무늬는 다음 방(`Logic.crossSource`) 벽 그림 뒤에 있다. 그 방을 맡은 친구가 자기 화면을 보고 말로 알려 줘야 한다. 태블릿끼리 물건을 넘기는 «건네기 낱말»은 넣지 않는다(효니 «단어 자체가 이상»).
-  - 도우러 가기: 담당 방의 봉인 3개(퍼즐 1~3)를 풀면 한 방을 연다(`helpsNow`·`canHelp`·`askHelp` — 앱 안에 그린 확인 창). 도운 방을 끝내면 또 한 방을 열 수 있다(빈 방·겹친 선택으로 막히지 않게). `esc.help` = 처음 도운 방, `esc.helps` = 전부.
+  - 도우러 가기: 담당 방의 봉인 3개(퍼즐 1~3)를 풀면 한 방을 연다(`helpsNow`·`canHelp`·`askHelp` — 앱 안에 그린 확인 창). 그 뒤로는 다른 방도 더 열 수 있다(«도운 방을 끝내야 다음 방»으로 묶으면 맡은 방이 2개 이하인 팀이 막힌다 — 검토자가 전수 탐색으로 재현, 2026-11-12). `esc.help` = 처음 도운 방, `esc.helps` = 전부.
   - 화면은 `scene.js`(`Scene.open`)·`scene.css`(밤의 박물관: 남색+등불 금빛). 방 안 진행은 `S.esc.sc[방 id]`({lit, got, inv, placed, combo, drawer, crate, sym}). 퍼즐 id·`S.esc.solved`·`S.esc.attempts`·`Logic.escScore`(담당 방 퍼즐 힌트·오답 없이 3/그 밖 1 ×4 + 비밀 2 + 수장고 3 + 자물쇠 3 + 도움 2 = 22)·제출 payload는 6판 그대로라 대시보드는 안 고쳤다. 시간은 점수에 없다. 6판까지의 저장본(`esc.v !== 7`)은 버린다.
   - solo(`?solo=1`)·미리보기는 모든 방이 열린다. 미리보기에는 «해결 처리»·«바로 조합»·«통과»·«이 방 끝내기» 버튼이 있다. 소리는 기본 꺼짐(방 화면 🔇, 파일 없이 브라우저가 만드는 음).
   - 끝까지 눌러 보는 점검: 로컬 서버에서 `?screen=escape&solo=1&sid=39999&name=시험` → 콘솔 `eval(await (await fetch("tools/e2e_scene.js")).text()); await E2E.run()` (POST는 막는다). 옛 진열장 화면(`renderPuzzle`·`#scrPuzzle`)은 안 쓰지만 남겨 두었다.

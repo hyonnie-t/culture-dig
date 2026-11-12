@@ -59,7 +59,7 @@ const Scene = (function () {
     S.esc.roomIdx = i; sel = null; cur = null;
     const r = room(), s = st(r);
     save(); draw(); closeModal();
-    show("scrScene");
+    show("scrScene"); placeSay(); panTo(0);
     if (!s.entered) { s.entered = true; save(); say(conf().enter); }
     else say(s.lit ? (i + 1) + "실로 돌아왔다." : conf().enter);
   }
@@ -152,6 +152,7 @@ const Scene = (function () {
     }
     if (!s.lit) { say("너무 어두워서 «" + c.names[name] + "»" + josa(c.names[name], "은", "는") + " 잘 보이지 않는다. 먼저 불을 밝혀야겠다."); return; }
     if (name === c.station) { openStation(); return; }
+    if (name === "safe" || name === "wall") panTo(c.spots[name][0] + c.spots[name][2] / 2);
     if (name === "case") {
       if (solved(P[0])) { say(c.names.case + josa(c.names.case, "은", "는") + " 열려 있다. 더 나올 것은 없다."); return; }
       openPuzzle(P[0], () => gain(s, c.mats[1], btn, "딸깍. " + c.names.case + josa(c.names.case, "이", "가") + " 열렸다.")); return;
@@ -311,7 +312,9 @@ const Scene = (function () {
     h.push('<div style="margin-top:.6rem">' + closeBtn + '</div>');
     const keep = cur; modal(h.join(""), "puz"); cur = keep;
     const card = $("scModalIn");
+    let locked = false; // 정답 뒤 0.38초 동안, 또는 빠른 두 번 누르기로 시도 횟수가 늘지 않게
     const win = () => {
+      locked = true;
       S.esc.solved[p.id] = true; save(); sfx("open");
       card.classList.add("solved");
       setTimeout(() => { closeModal(); draw(); if (after) after(); }, 380);
@@ -323,7 +326,7 @@ const Scene = (function () {
       shake(); renderTop();
     };
     $("hintBtn").addEventListener("click", () => { if (!a.hint) { a.hint = true; S.esc.hints++; save(); } $("puzHint").hidden = false; renderTop(); });
-    const sp = $("skipPuz"); if (sp) sp.addEventListener("click", win);
+    const sp = $("skipPuz"); if (sp) sp.addEventListener("click", () => { if (!locked) win(); });
     if (p.type === "match") {
       card.querySelectorAll(".m-left").forEach((b) => b.addEventListener("click", () => { a.selLeft = Number(b.dataset.i); card.querySelectorAll(".m-left").forEach((x) => x.classList.remove("sel")); b.classList.add("sel"); }));
       card.querySelectorAll(".m-right").forEach((b) => b.addEventListener("click", () => {
@@ -334,6 +337,7 @@ const Scene = (function () {
       }));
       $("checkBtn").addEventListener("click", () => {
         if (Object.keys(a.map).length < p.pairs.length) { $("puzErr").textContent = "네 쌍을 다 지어 줘."; return; }
+        if (locked) return;
         const res = Logic.checkMatch(p, a.map); a.tries++;
         if (res.correct) win(); else miss(res.ok + "/" + res.total + " 맞음. 짝을 바꿔 다시 해 봐.");
       });
@@ -341,18 +345,35 @@ const Scene = (function () {
       const swap = (x, y) => { const t = a.arr[x]; a.arr[x] = a.arr[y]; a.arr[y] = t; save(); drawPuzzle(); };
       card.querySelectorAll("[data-up]").forEach((b) => b.addEventListener("click", () => { const i = Number(b.dataset.up); if (i > 0) swap(i, i - 1); }));
       card.querySelectorAll("[data-down]").forEach((b) => b.addEventListener("click", () => { const i = Number(b.dataset.down); if (i < a.arr.length - 1) swap(i, i + 1); }));
-      $("checkBtn").addEventListener("click", () => { const res = Logic.checkOrder(p.items, a.arr); a.tries++; if (res.correct) win(); else miss(res.ok + "/" + res.total + " 자리가 맞아. 다시 놓아 봐."); });
+      $("checkBtn").addEventListener("click", () => { if (locked) return; const res = Logic.checkOrder(p.items, a.arr); a.tries++; if (res.correct) win(); else miss(res.ok + "/" + res.total + " 자리가 맞아. 다시 놓아 봐."); });
     } else if (p.type === "choice") {
       card.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => {
+        if (locked) return;
         a.tries++;
         if (Logic.checkChoice(p, b.dataset.i).correct) { b.classList.add("right"); win(); }
         else { b.classList.add("wrong"); b.disabled = true; a.wrong = (a.wrong || []).concat(Number(b.dataset.i)); miss("아니야. 다시 읽어 봐."); }
       }));
     } else if (p.type === "key") {
-      const go = () => { a.tries++; if (Logic.checkKey(p, $("keyIn").value).correct) win(); else miss("그 숫자가 아니야."); };
+      const go = () => { if (locked) return; a.tries++; if (Logic.checkKey(p, $("keyIn").value).correct) win(); else miss("그 숫자가 아니야."); };
       $("checkBtn").addEventListener("click", go);
       $("keyIn").addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
     }
+  }
+
+  /* 폰(폭 700px 아래)에서는 이야기 줄을 그림 밖(가방 위)으로 옮긴다 — 그림을 옆으로 밀어도 글이 따라 밀리지 않게 */
+  function placeSay() {
+    const say = $("scSay"), stage = $("scStage"), pan = $("scPan"); if (!say || !stage || !pan) return;
+    const narrow = window.matchMedia("(max-width:700px)").matches;
+    if (narrow && say.parentElement === stage) pan.parentElement.insertBefore(say, pan);
+    if (!narrow && say.parentElement !== stage) stage.insertBefore(say, $("scModal"));
+    say.classList.toggle("flow", narrow);
+  }
+  /* 폰: 누른 자리가 화면 밖으로 반쯤 나가 있으면 그쪽으로 조금 밀어 준다. 방에 들어오면 등이 있는 왼쪽부터 */
+  function panTo(pct) {
+    const wrap = document.querySelector(".sc-stage-wrap"), stage = $("scStage"); if (!wrap || !stage) return;
+    if (wrap.scrollWidth <= wrap.clientWidth + 2) return;
+    const x = stage.offsetWidth * pct / 100 - wrap.clientWidth / 2;
+    wrap.scrollTo({ left: Math.max(0, x), behavior: reduceMotion() ? "auto" : "smooth" });
   }
 
   /* ── 한 번만 거는 것들 ── */
@@ -372,6 +393,7 @@ const Scene = (function () {
       save(); draw(); say("미리보기: 이 방을 끝낸 상태로 바꿨다.");
     });
     $("scModal").addEventListener("click", (e) => { if (e.target === $("scModal")) closeModal(); });
+    placeSay(); window.addEventListener("resize", placeSay);
   }
 
   return { open: open, init: init, keyOf: keyOf, teamSeed: teamSeed, puzOf: puzOf, sealCount: sealCount };
