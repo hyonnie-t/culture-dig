@@ -75,7 +75,7 @@ function renderTop() {
     const sc = Logic.digScore(S.dig.results);
     parts.push("점수 <b>" + sc.score + "</b>");
   }
-  if (S.esc && S.esc.start && /^scr(Rooms|Puzzle|Vault|Escaped)$/.test(S.screen)) parts.push("점수 <b>" + escNow().score + "</b>/20");
+  if (S.esc && S.esc.start && /^scr(Rooms|Puzzle|Vault|Escaped)$/.test(S.screen)) parts.push("점수 <b>" + escNow().score + "</b>/" + ESC_MAX);
   if (S.name) parts.push(esc(S.name));
   t.innerHTML = parts.join(" · ");
   const inEsc = (S.screen === "scrRooms" || S.screen === "scrPuzzle" || S.screen === "scrVault") && S.esc && S.esc.start;
@@ -664,6 +664,11 @@ function roomOpen(i) {
 }
 function canHelp() { const rooms = roomsNow(); return !S.solo && S.esc.help < 0 && S.esc.role >= 0 && roomDone(rooms[S.esc.role]); }
 const PUZ_ICON = { match: "🏺", choice: "📜", order: "🪜", key: "🔑" };
+/* 🕵️ 비밀 진열장(2026-11-12 효니 «넌센스 느낌·추가 문제, 점수에 넣어도 좋음»): 담당 방(개인용은 처음 고른 방)을 다 풀면 그 방 secrets 2개가 진열장 줄 끝에 열린다.
+ * roomDone·열쇠 숫자에는 안 들어간다(r.puzzles만 본다). 각 +1(힌트 없이, 정답 상자가 열리기 전). 미리보기는 늘 열림. */
+const ESC_MAX = 20 + 2 * (SCORING.ESC_SECRET || 0);
+function secretsOpen(i) { const r = roomsNow()[i]; return !!(r && r.secrets && r.secrets.length) && (skip() || (i === S.esc.role && roomDone(r))); }
+function shelfOf(i) { const r = roomsNow()[i]; return secretsOpen(i) ? r.puzzles.concat(r.secrets) : r.puzzles; }
 
 function renderEscapeEntry() {
   if (!S.esc) S.esc = newEsc();
@@ -737,6 +742,8 @@ function introScenes() {
       txt: "문을 여는 방법은 하나. 전시실마다 숨은 열쇠 숫자를 찾아, 우리 팀 순서대로 맞추는 것." },
     { vis: '<div class="iv-tablet"><span class="iv-screen">' + rooms.map((r, i) => '<span class="iv-mini' + (i === 0 ? " on" : "") + '">' + (i === 0 ? r.emoji : "🔒") + '</span>').join("") + '</span></div>',
       txt: S.solo ? "너는 혼자 남은 발굴단. 모든 전시실이 열려 있지만, 네 방의 숫자를 혼자 다 찾아야 한다." : "그런데 내 태블릿에서는 내 담당 전시실 하나만 열린다. 다른 방 숫자는 그 방을 맡은 팀원만 안다." },
+    { vis: '<div class="iv-score"><span class="iv-sc">⛏️ 1차시 발굴</span><b>+</b><span class="iv-sc">🔐 오늘 방탈출</span><b>=</b><span class="iv-sc gold">🏆 최종 합계</span></div>',
+      txt: S.solo ? "점수판은 아직 꺼지지 않았다. 지난 시간 발굴 점수에 오늘 방탈출 점수가 더해진다." : "점수판은 아직 꺼지지 않았다. 지난 시간 우리 팀 발굴 점수는 그대로 남아 있고, 오늘 방탈출로 뒤집을 수 있다. 최종 합계가 나오면 선생님이 상품을 준다." },
     { vis: '<div class="iv-talk"><span class="iv-bub a">«3실 숫자는 ○야»</span><span class="iv-bub b">«앙부일구는 해 그림자로 시간을 알려 줘»</span></div>',
       txt: "박물관의 규칙: 숫자를 건넬 때는 그 방 유물 하나를 꼭 설명해 줄 것. 유물을 이해한 발굴단만 이 박물관을 나갈 수 있다.", last: true }
   ];
@@ -796,7 +803,7 @@ function renderRooms() {
     const open = roomOpen(i);
     const tag = i === S.esc.role ? '<span class="r-tag">내 담당</span>' : (i === S.esc.help ? '<span class="r-tag help">도우러 감</span>' : "");
     let key;
-    if (done) key = '<span class="r-key">🔑 ' + roomKey(r) + '</span>';
+    if (done) key = '<span class="r-key">🔑 ' + roomKey(r) + (secretsOpen(i) ? ' · 🕵️ 비밀 ' + r.secrets.filter((p) => S.esc.solved[p.id]).length + '/' + r.secrets.length : '') + '</span>';
     else if (open) key = '<span class="r-key locked">퍼즐 ' + n + '/' + r.puzzles.length + '</span>';
     else if (canHelp()) key = '<span class="r-key locked">🤝 도우러 가기</span>';
     else key = '<span class="r-key locked">🔒 담당 친구에게 숫자를 물어봐</span>';
@@ -810,7 +817,7 @@ function renderRooms() {
     h.push('<button type="button" class="room-tile vault-tile reveal" id="toVault"><span class="wheel"></span><span class="r-title">🚪 수장고 문</span><span class="r-sub">우리 팀 순서: ' + orderTxt + '</span><span class="r-key">열쇠 숫자 ' + rooms.length + '개를 모아서</span></button>');
   }
   h.push("</div>");
-  h.push('<div class="floor-foot"><span>내 점수 <b>' + sc.score + '</b>/20 · 담당 방 ' + sc.role + ' · 수장고 ' + sc.vault + ' · 자물쇠 ' + sc.final + ' · 도움 ' + sc.help + '</span>' +
+  h.push('<div class="floor-foot"><span>내 점수 <b>' + sc.score + '</b>/' + ESC_MAX + ' · 담당 방 ' + sc.role + ' · 비밀 ' + sc.secret + ' · 수장고 ' + sc.vault + ' · 자물쇠 ' + sc.final + ' · 도움 ' + sc.help + '</span>' +
     (S.esc.escapedAt ? "" : '<button type="button" class="btn small" id="submitNow">지금까지 기록 제출</button>') + '</div><p class="err" id="floorErr"></p><p class="ok" id="floorMsg"></p>');
   $("floorMap").innerHTML = h.join("");
   reveal($("floorMap"));
@@ -833,7 +840,7 @@ function tryOpenRoom(i) {
 function openRoom(i) {
   S.esc.roomIdx = i;
   const r = roomsNow()[i];
-  const firstOpen = r.puzzles.findIndex((p) => !S.esc.solved[p.id]);
+  const firstOpen = shelfOf(i).findIndex((p) => !S.esc.solved[p.id]);
   S.esc.puzIdx = firstOpen < 0 ? 0 : firstOpen;
   save();
   renderPuzzle(); show("scrPuzzle");
@@ -841,23 +848,26 @@ function openRoom(i) {
 
 function renderPuzzle() {
   const r = roomsNow()[S.esc.roomIdx];
-  const p = r.puzzles[S.esc.puzIdx];
+  const shelf = shelfOf(S.esc.roomIdx);
+  if (S.esc.puzIdx >= shelf.length) S.esc.puzIdx = 0;
+  const p = shelf[S.esc.puzIdx];
   const solved = !!S.esc.solved[p.id];
   const st = S.esc.attempts[p.id] || (S.esc.attempts[p.id] = { hint: false, tries: 0 });
   const seed = S.sid || "t"; // 보기 순서는 학생마다 다르다(같은 방 친구 화면을 그대로 베끼지 못하게)
   // 진열장 벽: 퍼즐 하나 = 진열장 하나
   $("roomShelf").innerHTML = '<div class="shelf-title"><span>' + r.emoji + ' ' + (S.esc.roomIdx + 1) + '실 ' + esc(r.title) + ' <span style="opacity:.8">' + esc(r.sub) + '</span></span><button type="button" class="btn small" id="backRooms" style="box-shadow:none">← 평면도</button></div>' +
-    '<div class="shelf-row">' + r.puzzles.map((pp, k) => '<button type="button" class="case-btn' + (S.esc.solved[pp.id] ? " done" : "") + (k === S.esc.puzIdx ? " cur" : "") + '" data-k="' + k + '"><span class="c-item">' + PUZ_ICON[pp.type] + '</span>' + esc(pp.id) + (S.esc.solved[pp.id] ? " ✓" : "") + '</button>').join("") + '</div>';
+    '<div class="shelf-row">' + shelf.map((pp, k) => '<button type="button" class="case-btn' + (pp.secret ? " secret" : "") + (S.esc.solved[pp.id] ? " done" : "") + (k === S.esc.puzIdx ? " cur" : "") + '" data-k="' + k + '"><span class="c-item">' + (pp.secret ? "🕵️" : PUZ_ICON[pp.type]) + '</span>' + esc(pp.id) + (S.esc.solved[pp.id] ? " ✓" : "") + '</button>').join("") + '</div>';
   $("roomShelf").querySelectorAll(".case-btn").forEach((b) => b.addEventListener("click", () => { S.esc.puzIdx = Number(b.dataset.k); save(); renderPuzzle(); }));
   $("backRooms").addEventListener("click", () => { renderRooms(); show("scrRooms"); });
 
-  const typeName = { match: "짝 맞추기", order: "순서 정렬", choice: "사료 읽고 고르기", key: "열쇠 숫자" }[p.type];
-  const isRole = S.esc.roomIdx === S.esc.role;
+  const typeName = p.secret ? "🕵️ 비밀 진열장" : { match: "짝 맞추기", order: "순서 정렬", choice: "사료 읽고 고르기", key: "열쇠 숫자" }[p.type];
+  const isRole = S.esc.roomIdx === S.esc.role && !p.secret; // 비밀 진열장은 «1점이 돼» 안내 대신 아래 secretNote
   const h = ['<div class="eyebrow">📋 안내판 ' + esc(p.id) + ' · ' + esc(typeName) + ' · <span class="muted">' + esc(p.page) + '</span></div>'];
   h.push('<p style="font-size:1.05rem">' + esc(p.q) + '</p>');
 
   if (solved) {
     h.push('<p class="result-line good">✓ 해결한 퍼즐이야.</p>');
+    if (!p.secret && S.esc.roomIdx === S.esc.role && secretsOpen(S.esc.roomIdx) && roomsNow()[S.esc.roomIdx].secrets.some((x) => !S.esc.solved[x.id])) h.push('<p class="secret-open pop">🕵️ 진열장 뒤에서 <b>비밀 진열장 2개</b>가 열렸어! 하나에 +1점(힌트 없이·정답 상자가 열리기 전에 풀면).</p>');
     if (p.type === "key") h.push('<div class="key-reveal">🔑 ' + (S.esc.roomIdx + 1) + '실 열쇠 숫자: ' + esc(p.answer) + '</div><p class="muted">팀원들에게 «' + (S.esc.roomIdx + 1) + '실은 ' + esc(p.answer) + '»라고 알려 줘. <b>박물관 규칙: 숫자와 함께 이 방 유물 하나를 설명해 주기.</b> 너도 다른 방 숫자를 물어 모아 — 숫자를 받을 때 그 방 이야기도 들어.</p>');
   } else if (p.type === "match") {
     const rights = orderOf(p.pairs.length, p.id + ":" + seed, true);
@@ -879,14 +889,14 @@ function renderPuzzle() {
   }
   h.push('<p class="err" id="puzErr"></p>');
   if (!solved) h.push(revealBox(p, st, null, isRole));
-  if (!solved) h.push('<button type="button" class="btn ghost small" id="hintBtn">💡 힌트 보기' + (isRole ? " (이 퍼즐은 1점이 돼)" : "") + '</button><p class="hint-box" id="puzHint"' + (st.hint ? "" : " hidden") + '>' + esc(p.hint) + '</p>');
+  if (!solved) h.push('<button type="button" class="btn ghost small" id="hintBtn">💡 힌트 보기' + (isRole ? " (이 퍼즐은 1점이 돼)" : p.secret ? " (이 비밀 진열장은 0점이 돼)" : "") + '</button><p class="hint-box" id="puzHint"' + (st.hint ? "" : " hidden") + '>' + esc(p.hint) + '</p>');
   if (skip() && !solved) h.push('<button type="button" class="btn ghost small" id="skipPuz">미리보기: 해결 처리</button>');
   h.push('<div class="row-between" style="margin-top:.8rem"><button type="button" class="btn" id="backRooms2">← 평면도</button>' + (solved ? '<button type="button" class="btn primary" id="nextPuz">다음 진열장 →</button>' : "") + '</div>');
 
   const card = $("puzzleCard");
   card.innerHTML = h.join("");
   $("backRooms2").addEventListener("click", () => { renderRooms(); show("scrRooms"); });
-  const nx = $("nextPuz"); if (nx) nx.addEventListener("click", () => { const k = r.puzzles.findIndex((pp) => !S.esc.solved[pp.id]); if (k < 0) { renderRooms(); show("scrRooms"); } else { S.esc.puzIdx = k; save(); renderPuzzle(); } });
+  const nx = $("nextPuz"); if (nx) nx.addEventListener("click", () => { const k = shelfOf(S.esc.roomIdx).findIndex((pp) => !S.esc.solved[pp.id]); if (k < 0) { renderRooms(); show("scrRooms"); } else { S.esc.puzIdx = k; save(); renderPuzzle(); } });
   const hb = $("hintBtn"); if (hb) hb.addEventListener("click", () => { if (!st.hint) { st.hint = true; S.esc.hints++; save(); } $("puzHint").hidden = false; renderTop(); });
   const sp = $("skipPuz"); if (sp) sp.addEventListener("click", () => { S.esc.solved[p.id] = true; save(); renderPuzzle(); });
 
@@ -921,7 +931,7 @@ function renderPuzzle() {
     card.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => {
       st.tries++;
       if (Logic.checkChoice(p, b.dataset.i).correct) { b.classList.add("right"); solvePuzzle(p); }
-      else { b.classList.add("wrong"); b.disabled = true; st.wrong = (st.wrong || []).concat(Number(b.dataset.i)); miss("아니야. 사료를 다시 읽어 봐."); }
+      else { b.classList.add("wrong"); b.disabled = true; st.wrong = (st.wrong || []).concat(Number(b.dataset.i)); miss(p.secret ? "아니야. 쪽지를 다시 읽어 봐." : "아니야. 사료를 다시 읽어 봐."); }
     }));
   } else if (p.type === "key") {
     $("checkBtn").addEventListener("click", () => {
@@ -1040,7 +1050,7 @@ function renderVault() {
 function renderEscaped() {
   const sc = escNow();
   $("escapedSummary").innerHTML = "<b>" + esc(curEscCode()) + "</b> · 담당 " + (S.esc.role + 1) + "실 · 걸린 시간 " + Logic.fmtElapsed(elapsedSec()) +
-    "<br>내 점수 <b>" + sc.score + "</b>/20 (담당 방 " + sc.role + " · 수장고 " + sc.vault + " · 자물쇠 " + sc.final + " · 도움 " + sc.help + ")";
+    "<br>내 점수 <b>" + sc.score + "</b>/" + ESC_MAX + " (담당 방 " + sc.role + " · 비밀 " + sc.secret + " · 수장고 " + sc.vault + " · 자물쇠 " + sc.final + " · 도움 " + sc.help + ")";
   const done = S.esc.submittedEscaped;
   $("submitEscape").disabled = done; $("submitEscape").textContent = done ? "제출 완료" : "탈출 기록 제출";
   if (done) $("escMsg").textContent = "기록이 선생님 화면에 들어갔어. 아직 못 나온 팀원에게 숫자를 알려 줘 — 팀 전원이 탈출하면 보너스야!";
@@ -1061,7 +1071,7 @@ async function submitEscape(from) {
   const payload = {
     studentId: S.sid, studentName: S.name, gameName: CONFIG.GAME_ESCAPE,
     groupId: curEscCode(),
-    choiceSummary: "점수 " + sc.score + " · " + (S.solo ? "개인" : (S.team || "")) + " · 담당 " + (S.esc.role + 1) + "실 · " + (escaped ? "탈출함" : "탈출 못 함") + " · " + Logic.fmtElapsed(sec) + " · " + S.mode,
+    choiceSummary: "점수 " + sc.score + " · " + (S.solo ? "개인" : (S.team || "")) + " · 담당 " + (S.esc.role + 1) + "실 · 비밀 " + sc.secret + " · " + (escaped ? "탈출함" : "탈출 못 함") + " · " + Logic.fmtElapsed(sec) + " · " + S.mode,
     diffSummary: "",
     reflection: (escaped ? "탈출 " : "진행 ") + Logic.fmtElapsed(sec) + " · " + curEscCode() + " · 담당 " + (S.esc.role + 1) + "실 · 점수 " + sc.score + " · 힌트 " + S.esc.hints + "회 · 시도 " + tries,
     choicesJson: JSON.stringify({ team: S.team || "", teamCode: curEscCode(), solo: !!S.solo, mode: S.mode, role: S.esc.role, help: S.esc.help, score: sc, escaped: escaped, elapsedSec: sec, hints: S.esc.hints, start: S.esc.start, escapedAt: S.esc.escapedAt, attempts: S.esc.attempts, ts: new Date().toISOString() })

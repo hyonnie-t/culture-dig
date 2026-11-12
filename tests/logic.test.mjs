@@ -193,6 +193,31 @@ test("방탈출 개인 점수: 담당 방 12 + 수장고 3 + 자물쇠 3 + 도�
   assert.equal(Logic.escScore({ role: 0, solved: {}, attempts: {} }, rooms, SCORING).score, 0);
 });
 
+test("비밀 진열장: 담당 방 secrets 2개 각 +1(힌트 없이·두 번째 시도까지) → 최대 22, 다른 방 secrets·열쇠 숫자와는 무관", () => {
+  const rooms = Logic.roomsFor("basic", ROOMS);
+  rooms.forEach(r => {
+    assert.equal(r.secrets.length, 2, r.id + " secrets 2개");
+    r.secrets.forEach(p => {
+      assert.equal(p.type, "choice"); assert.ok(p.secret);
+      assert.ok(p.options[p.answer], p.id + " 정답 보기");
+      assert.ok(/\d+(~\d+)?쪽/.test(p.why), p.id + " why에 쪽수");
+      assert.ok(!r.puzzles.some(q => q.id === p.id), p.id + " id 겹침 없음");
+    });
+  });
+  const solved = {}, attempts = {};
+  rooms[1].puzzles.forEach(p => { solved[p.id] = true; attempts[p.id] = { tries: 1, hint: false }; });
+  rooms[2].puzzles.forEach(p => { solved[p.id] = true; });
+  rooms[1].secrets.forEach(p => { solved[p.id] = true; attempts[p.id] = { tries: 2, hint: false }; });
+  rooms[3].secrets.forEach(p => { solved[p.id] = true; }); // 담당 방이 아닌 secrets는 점수 없음
+  const full = Logic.escScore({ role: 1, solved, attempts, vaultCode: true, escapedAt: 1 }, rooms, SCORING);
+  assert.equal(full.secret, 2); assert.equal(full.score, 22);
+  attempts[rooms[1].secrets[0].id] = { tries: 3, hint: false }; // 정답 상자를 본 뒤
+  attempts[rooms[1].secrets[1].id] = { tries: 1, hint: true };  // 힌트
+  assert.equal(Logic.escScore({ role: 1, solved, attempts, vaultCode: true, escapedAt: 1 }, rooms, SCORING).score, 20);
+  // 열쇠 숫자(수장고 번호)는 그대로 4자리
+  assert.equal(Logic.vaultCode(rooms, [0, 1, 2, 3]), "8593");
+});
+
 test("전시실 퍼즐: 유형별 필드와 열쇠 숫자가 한 자리, 금고 번호", () => {
   for (const r of ROOMS) {
     const keys = r.puzzles.filter(p => p.type === "key");
