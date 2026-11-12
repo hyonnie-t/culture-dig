@@ -30,7 +30,13 @@ const Scene = (function () {
 
   /* ── 소리(기본 꺼짐, 파일 없이 브라우저가 만드는 짧은 음) ── */
   const soundOn = () => { try { return localStorage.getItem("culture-dig:sound") === "1"; } catch (e) { return false; } };
+  function buzz(kind) { // 폰: 얻었을 때·열렸을 때·틀렸을 때 짧은 진동(지원하는 기기만, 움직임 줄이기면 끔)
+    const pat = { pick: 18, open: 28, light: 28, bell: 28, bad: [26, 50, 26] }[kind];
+    if (!pat || reduceMotion()) return;
+    try { if (navigator.vibrate) navigator.vibrate(pat); } catch (e) { /* 진동은 없어도 된다 */ }
+  }
   function sfx(kind) {
+    buzz(kind);
     if (!soundOn()) return;
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
@@ -106,7 +112,33 @@ const Scene = (function () {
     drawInv();
     renderTop();
   }
+  /* 지금 할 일 한 줄(2026-11-12, 효니가 준 역사 앱의 «미션 띠»·«연습 띠»에서): 방 머리 아래에 늘 보인다.
+   * 어디에 무엇이 있는지는 말하지 않고, 지금 단계와 진행 숫자만 알려 준다. 저장·점수와 상관없다. */
+  function goalText() {
+    const r = room(), c = conf(), s = st(r), i = S.esc.roomIdx, n = roomsNow().length;
+    if (!s.lit) {
+      if (has(s, "flint")) return "부싯돌로 등을 켜자";
+      return "불 붙일 것을 찾자 · 물건 " + c.hide.filter((h) => s.got[h]).length + "/" + c.hide.length;
+    }
+    const seals = sealCount(r);
+    if (seals < 3) return "봉인 " + seals + "/3 · 잠긴 것을 열자";
+    if (!solved(r.puzzles[3])) return s.sym ? "금고 숫자판을 풀자" : "금고 열기 · 무늬는 " + (Logic.crossSource(i, n) + 1) + "실 벽 뒤";
+    const left = secretsOpen(i) && r.secrets ? r.secrets.filter((p) => !solved(p)).length : 0;
+    if (left) return "🕵️ 비밀 칸 열기 · 남은 곳 " + left;
+    return "방 끝! 🔑 " + keyOf(r) + " · 복도로";
+  }
+  function drawGoal() {
+    let g = $("scGoal");
+    if (!g) {
+      const wrap = document.querySelector("#scrScene .sc-stage-wrap"); if (!wrap) return;
+      g = document.createElement("p"); g.id = "scGoal"; g.className = "sc-goal"; g.setAttribute("aria-live", "polite");
+      wrap.parentElement.insertBefore(g, wrap);
+    }
+    const t = "🎯 " + goalText();
+    if (g.textContent !== t) { g.textContent = t; g.classList.remove("flash"); void g.offsetWidth; g.classList.add("flash"); }
+  }
   function drawInv() {
+    drawGoal();
     const s = st(room());
     const slots = [];
     for (let k = 0; k < Math.max(5, s.inv.length); k++) {
