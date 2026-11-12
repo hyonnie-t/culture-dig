@@ -688,7 +688,8 @@ function renderEscapeEntry() {
   const tc = $("escTeamChange"); if (tc) tc.addEventListener("click", () => { const p = $("escTeamPick"); p.hidden = !p.hidden; if (!p.hidden) renderTeamPick(p, renderEscapeEntry); });
   renderEscReview();
   const rooms = roomsNow();
-  $("rolePick").innerHTML = rooms.map((r, i) => '<button type="button" class="chip role-chip' + (S.esc.role === i ? " sel" : "") + '" data-i="' + i + '">' + r.emoji + " " + (i + 1) + "실 " + esc(r.title) + "</button>").join("");
+  const tileBg = (r) => (typeof SCENES !== "undefined" && SCENES[r.id] ? ' style="--tile-bg:url(' + SCENES[r.id].bg + ')"' : ""); // 담당 방을 그림 카드로 고른다(7판 보강)
+  $("rolePick").innerHTML = rooms.map((r, i) => '<button type="button" class="chip role-chip' + (S.esc.role === i ? " sel" : "") + '" data-i="' + i + '"' + tileBg(r) + '>' + r.emoji + " " + (i + 1) + "실 " + esc(r.title) + "</button>").join("");
   $("rolePick").querySelectorAll(".role-chip").forEach((b) => b.addEventListener("click", () => { S.esc.role = Number(b.dataset.i); save(); renderEscapeEntry(); }));
   $("roleNote").textContent = S.solo ? "처음 풀 방을 골라. 점수는 이 방을 «담당 방»으로 계산해." : "팀원끼리 먼저 정하고 각자 눌러. 방마다 1~2명씩. 담당 방 열쇠 숫자는 그 방을 맡은 사람만 알게 돼 — 다른 팀원들이 너에게 물어볼 거야.";
   $("startEscape").disabled = !((S.team || S.solo || skip()) && S.esc.role >= 0);
@@ -765,6 +766,10 @@ function drawIntro() {
   const sc = introList[introAt];
   const stage = $("introStage");
   stage.classList.toggle("dark", !!sc.dark);
+  // 이야기 카드 뒤에 밤의 전시실 그림을 깐다(7판 보강 — 글 상자만 있던 것을 그림 카드로). 장면마다 방을 돌려 쓴다.
+  const rs = roomsNow(), rb = rs.length && typeof SCENES !== "undefined" ? SCENES[rs[introAt % rs.length].id] : null;
+  stage.classList.toggle("night", !!rb);
+  if (rb) stage.style.setProperty("--intro-bg", "url(" + rb.bg + ")");
   const vis = $("introVis");
   vis.innerHTML = sc.vis;
   vis.classList.remove("in"); void vis.offsetWidth; vis.classList.add("in"); // 장면이 바뀔 때마다 다시 등장
