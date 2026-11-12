@@ -4,7 +4,7 @@
 배포: https://hyonnie-t.github.io/culture-dig/ (GitHub Pages). 저장소는 public이다. 교사용 안내는 `학교업무\2026 대영중학교\3학년 한국사\문화사 발굴·방탈출\01_교사용_안내.md`, 3판 재설계안은 같은 폴더 `03_재설계안_1인1태블릿_2026-11-03.md`(2판 디자인 브리프는 `02_…`).
 
 ## 구조
-- `index.html` / `style.css` / `data.js`(팀·성향 테스트·점수 기준·유물·퍼즐·사진·어휘, 교과서 쪽수) / `pixels.js`(유물마다 32×32 도트 그림) / `logic.js`(판정·점수·팀 뽑기·결산·블록 배치, DOM 없음) / `app.js`(화면 흐름)
+- `index.html` / `style.css` / `scene.css`(7판 방 화면) / `data.js`(팀·성향 테스트·점수 기준·유물·퍼즐·사진·어휘, 교과서 쪽수) / `variants.js`(문제 변형 풀, `src` = 근거가 된 data.js 문장) / `scenes.js`(방 그림·누를 자리·물건) / `scene.js`(방 화면) / `pixels.js`(유물마다 32×32 도트 그림) / `logic.js`(판정·점수·팀 뽑기·결산·블록 배치, DOM 없음) / `app.js`(화면 흐름)
 - `fonts/NeoDunggeunmo.woff`: 도트 글꼴. `img/`: 유물 사진(공공누리 제1유형만, 300KB 이하) + `img/manifest.json`(출처·라이선스 근거)
 - `focus_guard.js`·`draft_guard.js`·`glossary.js`: history26 `snippets/` 사본(2026-11-02 기준)
 - `tests/logic.test.mjs`: `node --test tests/logic.test.mjs` / `tools/export_puzzles.mjs`: 교사용 표(팀·유물·사진 출처·퍼즐·팀별 수장고 번호)를 data.js에서 뽑는다 / `tools/draw_pixels.mjs`: pixels.js를 만든다 / `tools/register_lesson.mjs`: 커리큘럼 등록(이미 등록됨)
@@ -15,7 +15,15 @@
 - 팀 = 발굴 도구 4개 🖌️붓·⛏️곡괭이·🔍돋보기·🧭나침반 발굴단(`TEAMS`). ⓑ 수능 던전 팀(성적 균형)과 **따로**다. 성향 테스트(`QUIZ` 4문항) → `Logic.quizRanking`이 1~4지망 → 자동 제출(`문화사_팀테스트`). 학생 화면에는 팀 이름이 아니라 성향(`type`: 섬세형·끈기형·탐구형·이끄는형)만 보인다.
 - 팀 뽑기·결산은 **history26 교사 대시보드 «👥 모둠·팀» 탭의 «🏺 문화사 발굴단»**(`history26/js/09-dash-culture.js`, v142)이 한다. 대시보드가 게임활동_로그를 바로 읽고, 이 레포 `logic.js`를 배포 주소에서 불러 `Logic.drawTeams`(인원 차이 최대 1명, 1지망 수 최우선 — 헝가리안)·`Logic.teamResults`·`Logic.parseNumbers`를 쓴다. 확정 팀·결석 번호는 백엔드 시트 `문화사팀`(`cultureTeamsSave`·`mode=cultureTeams`, 교사 전용). **이 함수들의 이름·인자를 바꾸면 대시보드도 고친다.** 학생은 칠판을 보고 앱에서 팀을 고른다(`culture-dig:team:<학번>`, 모드와 상관없음).
 - 발굴: 층마다 블록 10개(5×2) 중 7개에 유물·3개는 «돌멩이뿐». 자리는 학번+층 시드(`Logic.blockLayout`). 곡괭이 탭 3번. 이름 보기는 처음부터 4지선다(2026-11-10 1차시 «너무 쉽다»로 2지선다 없앰). 흘러든 유물(`intruder`)은 «시대 + 만든 까닭» 4지선다 한 문제(`eraQ`, 정답은 note에서만, 정답 문장은 진짜 시대 이름으로 시작 — 테스트가 잡는다). 예/아니오 시대 문제(era1·era2)는 «유치하다»로 없앰. 층 순서 `DIG_ORDER` = "top-down"(표토부터, 효니 확정). 개인 점수 `Logic.digScore`.
-- 방탈출: 입장 때 «담당 전시실»(`esc.role`)을 고른다. 처음엔 담당 방만 열리고, 담당 방을 다 풀면 «도우러 가기»로 한 방(`esc.help`)을 더 연다. 다른 방 열쇠 숫자는 팀원에게 말로 받는다. 수장고 번호는 팀마다 전시실 순서가 다르다(`Logic.vaultOrder(teamIdx, n)` + `Logic.vaultCode(rooms, order)`; solo는 1실부터). 개인 점수 `Logic.escScore`(담당 방 퍼즐 힌트·오답 없이 3/그 밖 1 ×4 + 수장고 3 + 자물쇠 3 + 도움 2 = 20). 시간은 점수에 없다. solo·미리보기는 모든 방이 열린다.
+- 방탈출(7판 «장면형», 2026-11-12 효니 «전체 재설계» — 6판은 «퀴즈일 뿐»이라는 지적. 기준은 도름스 «정음: 28자의 비밀» 같은 2D 미스터리 어드벤처):
+  - 입장 때 «담당 전시실»(`esc.role`)을 고른다. 방 = 밤의 전시실 그림 1장(`img/scene/room1~4.jpg`, 힉스필드 gpt_image_2_6로 만든 AI 그림 — 실제 유물·건물이 아니라고 바닥글에 적음) + 누를 자리 10곳(`scenes.js`의 `SCENES[방 id].spots`, % 좌표. **그림을 바꾸면 좌표를 다시 잰다**).
+  - 한 방의 흐름: 어두움(손전등 = 손가락을 따라가는 빛) → 숨은 곳 3곳에서 부싯돌·서랍 열쇠·재료1 → 부싯돌로 등 켜기 → 진열장(퍼즐1)→재료2 → 서랍(열쇠, 퍼즐2)→재료3 → 작업대에 재료 3개 조합 → 세 자리 번호 → 상자(번호, 퍼즐3) → 금고: 무늬 4개 + 퍼즐4 → 열쇠 숫자 → 🕵️ 비밀 칸 2곳(항아리·깔개 자리, 담당 방만).
+  - **베낄 수 없게**: 학번 시드 = 문제 변형(`variants.js` `PUZZLE_ALTS` → `Logic.pickVariant`), 숨긴 자리(`Logic.hideLayout`), 작업대 번호(`Logic.comboCode`), 보기 순서. 팀 시드(반+팀, `Scene.teamSeed`) = 금고 무늬(`Logic.crossSymbols`), 열쇠 숫자(`Logic.teamKey`), 수장고 번호(`Logic.vaultCode2`, 순서는 `Logic.vaultOrder`). 퍼즐 4(숫자판)의 답과 열쇠 숫자는 다른 값이다.
+  - **엇갈린 단서**(팀 협력): i실 금고의 무늬는 다음 방(`Logic.crossSource`) 벽 그림 뒤에 있다. 그 방을 맡은 친구가 자기 화면을 보고 말로 알려 줘야 한다. 태블릿끼리 물건을 넘기는 «건네기 낱말»은 넣지 않는다(효니 «단어 자체가 이상»).
+  - 도우러 가기: 담당 방의 봉인 3개(퍼즐 1~3)를 풀면 한 방을 연다(`helpsNow`·`canHelp`·`askHelp` — 앱 안에 그린 확인 창). 그 뒤로는 다른 방도 더 열 수 있다(«도운 방을 끝내야 다음 방»으로 묶으면 맡은 방이 2개 이하인 팀이 막힌다 — 검토자가 전수 탐색으로 재현, 2026-11-12). `esc.help` = 처음 도운 방, `esc.helps` = 전부.
+  - 화면은 `scene.js`(`Scene.open`)·`scene.css`(밤의 박물관: 남색+등불 금빛). 방 안 진행은 `S.esc.sc[방 id]`({lit, got, inv, placed, combo, drawer, crate, sym}). 퍼즐 id·`S.esc.solved`·`S.esc.attempts`·`Logic.escScore`(담당 방 퍼즐 힌트·오답 없이 3/그 밖 1 ×4 + 비밀 2 + 수장고 3 + 자물쇠 3 + 도움 2 = 22)·제출 payload는 6판 그대로라 대시보드는 안 고쳤다. 시간은 점수에 없다. 6판까지의 저장본(`esc.v !== 7`)은 버린다.
+  - solo(`?solo=1`)·미리보기는 모든 방이 열린다. 미리보기에는 «해결 처리»·«바로 조합»·«통과»·«이 방 끝내기» 버튼이 있다. 소리는 기본 꺼짐(방 화면 🔇, 파일 없이 브라우저가 만드는 음).
+  - 끝까지 눌러 보는 점검: 로컬 서버에서 `?screen=escape&solo=1&sid=39999&name=시험` → 콘솔 `eval(await (await fetch("tools/e2e_scene.js")).text()); await E2E.run()` (POST는 막는다). 옛 진열장 화면(`renderPuzzle`·`#scrPuzzle`)은 안 쓰지만 남겨 두었다.
 - 팀 점수(`SCORING`, 수능 던전 재설계안 2-3과 같은 틀): 팀 평균(분모 = 출석자 전원, 미제출 0점, 결석만 뺌) → 순위 포인트 40/30/20/10(동점 같은 포인트, 다음 순위 건너뜀, `Logic.rankPoints`) + 전원 제출 +5 + 전원 탈출 +5(방탈출). 대시보드 «👥 모둠·팀» 탭의 «🏺 문화사 발굴단»이 `Logic.teamResults`로 계산.
 - 사진: `ARTIFACTS[].photo`. 공공누리 제1유형만. **그림 규칙(4판, 2026-11-09 효니 «사진·도트 통일»)**: 땅속 블록 칸은 언제나 `pixels.js` 32×32 도트(`PIXEL_ART32`/`PIXEL_PAL32`), 유물 카드·수첩·한 줄 쓰기 카드는 언제나 실제 사진. 사진이 없는 유물(j3 칠정산·j5 몽유도원도)은 도트로 대신하지 않고 `artVisual`의 «📖 교과서 n쪽» 자리. 탭하면 라이트박스 + 출처 한 줄.
 - 유연 모드: 4판에서 끔(`init`에서 `S.mode = "basic"` 고정, `?mode=flex` 무시, 첫 화면 링크 삭제). `data.js`·`logic.js`의 flex 데이터와 테스트는 대시보드·나중 재사용 때문에 남김.
@@ -30,7 +38,7 @@
 ## 규칙
 - 고치기 전에 `git fetch` 후 `origin/main`에서 임시 worktree(`git worktree add <임시폴더> -b <브랜치> origin/main`)를 만들어 작업한다. 여러 세션이 이 폴더를 같이 쓰므로 공용 폴더는 `main`으로 둔다(2026-11-08).
 - 교과서(비상 역사② 이병인) 밖 사실을 넣지 않는다. 유물·퍼즐마다 `page`를 붙인다. 팀·퍼즐·사진을 고치면 `node tools/export_puzzles.mjs`로 교사용 안내 아래쪽 표를 다시 뽑는다(안내 위쪽 1~4절은 손으로 쓴 부분).
-- 수장고 기본 번호는 전시실 순서대로 각 방 `key` 숫자(공통 8593, 유연 98593). 팀별 번호는 `vaultOrder`로 돌린 것. 방을 더하거나 순서를 바꾸면 테스트 기대값도 바꾼다.
+- 수장고 번호(7판): 팀 순서(`vaultOrder`)대로 팀별 열쇠 숫자(`Logic.vaultCode2`). 반·팀별 표는 `node tools/export_puzzles.mjs`가 뽑는다. 옛 `Logic.vaultCode`(8593)는 테스트·호환용으로만 남아 있다. 문제 변형을 고치면 `src`를 data.js 문장으로 채우고(교과서 밖 사실 금지), 쪽수를 확인 못 한 것은 넣지 않는다.
 - 제출은 기본 제출 경로. `groupId` = `3-반-팀`(solo는 `학번(개인)`). 대시보드는 `choicesJson.score.score`(발굴·방탈출)·`choicesJson.escaped`·`choicesJson.ranking`(테스트)을 읽는다(없으면 `choiceSummary`의 `점수 n`). 이 필드 이름을 바꾸면 대시보드도 고친다. 방탈출은 다시 낼 수 있고 대시보드는 같은 학번의 마지막 제출을 쓴다.
 - 학번·이름 명단을 레포에 넣지 않는다. 백엔드는 `history26_backend`, URL·ID·토큰을 새로 적지 않는다. 이 앱이 쓰는 백엔드 경로는 기본 제출뿐(팀 저장은 대시보드가).
 - 태블릿 기본(폭 3단계). 작업 브랜치 → 테스트 → 세 폭 내장 브라우저 확인 → 검토자 1회 → PR → `gh pr merge`(병합은 Claude) → 배포 주소를 내장 브라우저로 직접 확인 → 효니에게 Ctrl+F5 안내.

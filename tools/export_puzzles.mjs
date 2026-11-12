@@ -85,17 +85,36 @@ for (const r of ROOMS) {
   }
   out.push("");
 }
-out.push("### 🚪 수장고 문(금고)\n");
-const B = Logic.roomsFor("basic", ROOMS), F = Logic.roomsFor("flex", ROOMS);
-out.push("- 번호는 **팀마다 전시실 순서가 다르다**(다른 팀 번호를 받아 적어도 안 열리게). 개인용(?solo=1)은 1실부터.\n");
-out.push("| 팀 | 공통(4실) 순서 → 번호 | 유연(5실) 순서 → 번호 |");
-out.push("|---|---|---|");
-TEAMS.forEach((tm, i) => {
-  const ob = Logic.vaultOrder(i, B.length), of = Logic.vaultOrder(i, F.length);
-  out.push(`| ${tm.emoji} ${tm.id} | ${ob.map((k) => k + 1 + "실").join("→")} → **${Logic.vaultCode(B, ob)}** | ${of.map((k) => k + 1 + "실").join("→")} → **${Logic.vaultCode(F, of)}** |`);
-});
-out.push(`| 개인용 | 1→2→3→4실 → **${Logic.vaultCode(B)}** | 1→…→5실 → **${Logic.vaultCode(F)}** |`);
+/* 7판(2026-11-12): 같은 자물쇠에 학생마다 다른 문제가 나온다(variants.js). 위 표는 «원래 문제», 아래는 변형. */
+const req = (await import("node:module")).createRequire(import.meta.url);
+const { PUZZLE_ALTS } = req("../variants.js");
+const { SCENE_SYMS } = req("../scenes.js");
+const ansOf = (p, type) => type === "match" ? p.pairs.map((x) => `${x[0]} = ${x[1]}`).join(" / ") : type === "order" ? p.items.join(" → ") : type === "choice" ? p.options[p.answer] : String(p.answer);
+out.push("### 🎲 문제 변형 (7판) — 같은 자물쇠에 학생마다 다른 문제가 나온다\n");
+out.push("학번으로 정해지므로 새로고침해도 그 학생에게는 같은 문제다. 옆 친구와는 문제가 다를 수 있다.\n");
+out.push("| 자물쇠 | 문항 | 정답 | 쪽수 |");
+out.push("|---|---|---|---|");
+const B = Logic.roomsFor("basic", ROOMS);
+for (const r of B) for (const p of r.puzzles.concat(r.secrets || [])) (PUZZLE_ALTS[p.id] || []).forEach((a, k) => out.push(`| ${p.id} 변형${k + 1} | ${a.q} | ${ansOf(a, p.type)} | ${a.page} |`));
+(PUZZLE_ALTS.V1 || []).forEach((a, k) => out.push(`| 마지막 자물쇠 변형${k + 1} | ${a.q} | ${a.items.join(" → ")} | ${a.page} |`));
 out.push("");
-out.push(`- 통합 문항(${VAULT.final.page}): ${VAULT.final.q} 정답 순서: ${VAULT.final.items.join(" → ")} / 유연: ${VAULT.final.flexItems.join(" → ")}`);
+
+out.push("### 🚪 수장고 문 — 반·팀별 번호 (7판)\n");
+out.push("- 7판부터 **열쇠 숫자가 팀마다 다르다**(반 + 팀으로 정해짐). 전시실 순서도 팀마다 다르다. 아래 표는 «전시실 순서: 수장고 번호»다. 칠판에 쓰지 않는다.");
+out.push("- 금고 무늬(달·구름·꽃·산·물결·별 가운데 4개)도 팀마다 다르고, **다음 방 벽 그림 뒤**에 있다(1실 금고 무늬는 2실 벽, 2실→3실, 3실→4실, 4실→1실).");
+out.push("- 물건이 숨은 자리·작업대에서 나오는 세 자리 번호·문제는 학생마다 다르다. 개인용(?solo=1)은 열쇠 숫자도 학번마다 다르다(표 없음, 학생이 직접 푼다).\n");
+out.push("| 반 | " + TEAMS.map((tm) => `${tm.emoji} ${tm.id}`).join(" | ") + " |");
+out.push("|---|" + TEAMS.map(() => "---").join("|") + "|");
+for (let ban = 1; ban <= 12; ban++) {
+  out.push(`| ${ban}반 | ` + TEAMS.map((tm, i) => { const ob = Logic.vaultOrder(i, B.length); return `${ob.map((k) => k + 1).join("→")}실: **${Logic.vaultCode2(ban + ":" + tm.id, B, ob)}**`; }).join(" | ") + " |");
+}
+out.push("");
+out.push("막힌 팀을 도울 때: 그 팀 학생 화면의 복도 → 맨 위 🔑 줄에 푼 방의 숫자가 보인다. 금고 무늬는 그 무늬가 그려진 방(다음 방)의 «벽 그림»을 누르면 보인다.\n");
+out.push("<details><summary>반·팀별 금고 무늬표 (필요할 때만 펼치기)</summary>\n");
+out.push("| 반·팀 | 1실 금고 | 2실 금고 | 3실 금고 | 4실 금고 |");
+out.push("|---|---|---|---|---|");
+for (let ban = 1; ban <= 12; ban++) for (const tm of TEAMS) out.push(`| ${ban}반 ${tm.id} | ` + B.map((r) => Logic.crossSymbols(ban + ":" + tm.id, r.id, SCENE_SYMS.length, 4).map((k) => SCENE_SYMS[k].name).join("·")).join(" | ") + " |");
+out.push("\n</details>\n");
+out.push(`- 마지막 자물쇠 원래 문제(${VAULT.final.page}): ${VAULT.final.q} 정답 순서: ${VAULT.final.items.join(" → ")}`);
 out.push(`- 힌트: ${VAULT.final.hint}`);
 process.stdout.write(out.join("\n") + "\n");

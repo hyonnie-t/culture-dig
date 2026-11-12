@@ -301,3 +301,81 @@ test("팀 4개, 어휘 사전은 비어 있지 않다", () => {
   assert.equal(TEAMS.length, 4);
   assert.ok(Object.keys(GLOSSARY).length > 30);
 });
+
+/* ───── 7판 장면형 방탈출(2026-11-12) ───── */
+import { createRequire as _cr7 } from "node:module";
+const _req7 = _cr7(import.meta.url);
+const { PUZZLE_ALTS } = _req7("../variants.js");
+const { SCENES, SCENE_ITEMS, SCENE_SYMS } = _req7("../scenes.js");
+
+test("7판 장면형: 학생·팀마다 달라지는 값은 같은 시드면 같고, 시드가 다르면 갈린다", () => {
+  assert.equal(Logic.comboCode("30101:A"), Logic.comboCode("30101:A"));
+  assert.match(Logic.comboCode("30101:A"), /^[1-9]{3}$/);
+  const combos = new Set(); for (let n = 1; n <= 30; n++) combos.add(Logic.comboCode("301" + String(n).padStart(2, "0") + ":A"));
+  assert.ok(combos.size >= 20, "30명 가운데 번호가 20가지 넘게 갈려야 한다: " + combos.size);
+  const lay = Logic.hideLayout("30101:A", ["jar", "rug", "obj2"], ["flint", "key", "a1"]);
+  assert.deepEqual(Object.keys(lay).sort(), ["jar", "obj2", "rug"]);
+  assert.deepEqual(Object.values(lay).sort(), ["a1", "flint", "key"]);
+  const lays = new Set(); for (let n = 1; n <= 30; n++) lays.add(JSON.stringify(Logic.hideLayout("301" + String(n).padStart(2, "0") + ":A", ["jar", "rug", "obj2"], ["flint", "key", "a1"])));
+  assert.ok(lays.size >= 4, "숨긴 자리가 여러 가지로 갈려야 한다: " + lays.size);
+  const sy = Logic.crossSymbols("5:붓", "A", 6, 4);
+  assert.equal(sy.length, 4); assert.equal(new Set(sy).size, 4); sy.forEach((k) => assert.ok(k >= 0 && k < 6));
+  assert.deepEqual(sy, Logic.crossSymbols("5:붓", "A", 6, 4));
+  assert.match(Logic.teamKey("5:붓", "A"), /^[1-9]$/);
+});
+
+test("7판 장면형: 수장고 번호는 팀마다 다르고, 금고 무늬는 다음 방 벽에 있다", () => {
+  const rooms = Logic.roomsFor("basic", ROOMS);
+  for (let ban = 1; ban <= 10; ban++) {
+    const codes = TEAMS.map((t, i) => Logic.vaultCode2(ban + ":" + t.id, rooms, Logic.vaultOrder(i, rooms.length)));
+    codes.forEach((c) => assert.match(c, /^[1-9]{4}$/));
+    assert.equal(new Set(codes).size, TEAMS.length, ban + "반 팀별 수장고 번호가 겹친다: " + codes.join(","));
+    const syms = TEAMS.map((t) => rooms.map((r) => Logic.crossSymbols(ban + ":" + t.id, r.id, 6, 4).join("")).join("/"));
+    assert.equal(new Set(syms).size, TEAMS.length, ban + "반 팀별 무늬가 겹친다");
+  }
+  for (let i = 0; i < 4; i++) { const s = Logic.crossSource(i, 4); assert.notEqual(s, i); assert.equal((s - 1 + 4) % 4, i); }
+});
+
+test("7판 장면형: 문제 변형 — 모양이 맞고, 뽑아도 id·type이 그대로다", () => {
+  const rooms = Logic.roomsFor("basic", ROOMS);
+  const all = []; rooms.forEach((r) => { r.puzzles.forEach((p) => all.push(p)); (r.secrets || []).forEach((p) => all.push(p)); });
+  all.push(VAULT.final);
+  all.forEach((p) => {
+    const alts = PUZZLE_ALTS[p.id];
+    assert.ok(Array.isArray(alts) && alts.length >= 1, p.id + " 변형이 없다");
+    alts.forEach((a, k) => {
+      const tag = p.id + "[" + k + "]";
+      assert.ok(a.q && a.hint && a.why && a.page, tag + " q·hint·why·page");
+      assert.match(a.why, /쪽/, tag + " why에 교과서 쪽");
+      if (p.type === "match") { assert.equal(a.pairs.length, 4, tag); assert.equal(new Set(a.pairs.map((x) => x[1])).size, 4, tag + " 설명 중복"); }
+      if (p.type === "choice") { assert.equal(a.options.length, 4, tag); assert.ok(a.answer >= 0 && a.answer < 4, tag); assert.equal(new Set(a.options).size, 4, tag + " 보기 중복"); }
+      if (p.type === "order") { assert.equal(a.items.length, 4, tag); assert.equal(new Set(a.items).size, 4, tag); }
+      if (p.type === "key") assert.match(String(a.answer), /^[0-9]{1,4}$/, tag);
+      assert.ok(!/기숙사|청자단/.test(JSON.stringify(a)), tag + " 금지어");
+    });
+    const seen = new Set();
+    for (let n = 1; n <= 40; n++) {
+      const v = Logic.pickVariant(p, alts, "301" + String(n).padStart(2, "0"));
+      assert.equal(v.id, p.id); assert.equal(v.type, p.type); assert.equal(!!v.secret, !!p.secret);
+      seen.add(JSON.stringify([v.q, v.options, v.pairs, v.items, v.answer]));
+    }
+    assert.ok(seen.size >= 2, p.id + " 40명에게 같은 문제만 나온다");
+  });
+});
+
+test("7판 장면형: 방 데이터 — 누를 자리 10곳, 숨은 곳 3곳, 재료 3개, 그림 파일 이름", () => {
+  const rooms = Logic.roomsFor("basic", ROOMS);
+  const need = ["lantern", "case", "obj2", "wall", "table", "drawers", "safe", "jar", "crate", "rug"];
+  rooms.forEach((r) => {
+    const c = SCENES[r.id];
+    assert.ok(c, r.id + " 장면 없음");
+    assert.deepEqual(Object.keys(c.spots).sort(), need.slice().sort(), r.id + " 누를 자리");
+    need.forEach((k) => { const b = c.spots[k]; assert.equal(b.length, 4); assert.ok(b[0] >= 0 && b[1] >= 18 && b[0] + b[2] <= 100 && b[1] + b[3] <= 100, r.id + "." + k + " 좌표(위 18%는 이야기 줄 자리)"); assert.ok(c.names[k], r.id + "." + k + " 이름"); });
+    assert.equal(c.hide.length, 3); c.hide.forEach((h) => assert.ok(c.spots[h] && h !== c.station && ["lantern", "case", "drawers", "crate", "safe", "wall"].indexOf(h) < 0, r.id + " 숨은 곳 " + h));
+    assert.ok(c.hide.indexOf("jar") >= 0 && c.hide.indexOf("rug") >= 0, r.id + " 비밀 칸 자리(jar·rug)는 숨은 곳이어야 한다");
+    assert.equal(c.mats.length, 3); c.mats.forEach((m) => assert.ok(SCENE_ITEMS[m], m));
+    assert.equal(r.puzzles.length, 4, r.id + " 자물쇠 4개"); assert.equal((r.secrets || []).length, 2, r.id + " 비밀 2개");
+  });
+  assert.equal(SCENE_SYMS.length, 6);
+  ["flint", "key"].forEach((k) => assert.ok(SCENE_ITEMS[k]));
+});
