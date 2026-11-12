@@ -64,11 +64,24 @@ button.sc-slot{cursor:pointer}
 .sc-symbtn{width:4.6rem;height:5rem;background:#151d38;color:#e6b450;border:3px solid #a87a1e;border-radius:50% 50% 12px 12px;font-size:2rem;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
 .sc-symbtn:disabled{opacity:.35}
 
-/* 복도(평면도) 칸: 방 그림을 바탕에 깐다. 잠긴 방은 어둡게 */
-.room-tile.scene-tile{background:linear-gradient(rgba(251,247,238,.86),rgba(251,247,238,.93)),var(--tile-bg) center/cover}
-.room-tile.scene-tile.shut{background:linear-gradient(rgba(12,18,36,.80),rgba(12,18,36,.9)),var(--tile-bg) center/cover;color:#f3e6c8;opacity:1;filter:none}
-.room-tile.scene-tile.shut .r-sub{color:#c9c0aa}
-.floor-ask{background:var(--page);color:var(--ink);border:3px solid var(--brass);padding:.6rem .8rem;margin:.4rem}
+/* 복도(7판): 평면도를 밤의 박물관으로. 칸마다 그 방 그림을 깔고, 잠긴 방은 더 어둡게 */
+.floor{border-color:#05070f;background:#0c1224;box-shadow:4px 4px 0 #05070f}
+.floor-in{background:#0c1224;background-image:none;gap:8px}
+.room-tile.scene-tile{background:linear-gradient(rgba(8,12,28,.30),rgba(8,12,28,.86) 62%),var(--tile-bg) center 35%/cover;color:#f6e7c7;border:3px solid #a87a1e;min-height:11.5rem;justify-content:flex-end;box-shadow:inset 0 0 0 1px #05070f}
+.room-tile.scene-tile .door{display:none}
+.room-tile.scene-tile .r-title{color:#ffd867;text-shadow:0 2px 0 #05070f}
+.room-tile.scene-tile .r-sub{color:#d9cfb6}
+.room-tile.scene-tile .case{background:transparent;border:2px solid #a87a1e;border-radius:50%;width:.9rem;height:.9rem}
+.room-tile.scene-tile .case.on{background:#e6b450;box-shadow:0 0 8px #e6b450}
+.room-tile.scene-tile .r-key{margin-top:.3rem}
+.room-tile.scene-tile.shut{background:linear-gradient(rgba(4,6,14,.78),rgba(4,6,14,.93)),var(--tile-bg) center 35%/cover;border-color:#3a4263;opacity:1;filter:none}
+.room-tile.scene-tile.shut .r-title{color:#b9b3a3}
+.room-tile.scene-tile.done{border-color:#e6b450;box-shadow:inset 0 0 0 1px #05070f,0 0 14px rgba(230,180,80,.5)}
+.room-tile.scene-tile.goryeo,.room-tile.scene-tile.joseon,.room-tile.scene-tile.samguk{border-top-width:3px}
+.room-tile.vault-tile{border-color:#a87a1e}
+.floor-ask{background:var(--page);color:var(--ink);border:3px solid var(--brass);padding:.6rem .8rem;margin:.5rem .4rem}
 .floor-ask[hidden]{display:none}
 
 @media (prefers-reduced-motion:reduce){.sc-stage.lit .sc-darkness,.sc-spot.secret,.sc-pop,.sc-modal-in{animation:none}.sc-pop{display:none}}
+
+.sc-head .btn.ghost{color:#f6e7c7;border-color:#6b7399;background:transparent}
