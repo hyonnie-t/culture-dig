@@ -188,18 +188,24 @@
 
   /* 방탈출 개인 점수. esc = 진행 상태(role·solved·attempts·vaultCode·escapedAt), rooms = 이 모드의 전시실들. */
   function escScore(esc, rooms, SC) {
-    var s = { role: 0, clean: 0, vault: 0, final: 0, help: 0, score: 0 };
+    var s = { role: 0, clean: 0, vault: 0, final: 0, help: 0, secret: 0, score: 0 };
     var role = rooms[esc.role];
     if (role) role.puzzles.forEach(function (p) {
       if (!esc.solved[p.id]) return;
       var a = (esc.attempts || {})[p.id] || {};
       if (!a.hint && (a.tries || 0) <= 1) { s.clean++; s.role += SC.ESC_CLEAN; } else s.role += SC.ESC_SOLVED;
     });
+    // 🕵️ 비밀 진열장(2026-11-12): 담당 방 secrets — 힌트 없이, 정답 상자가 열리기 전(두 번째 시도까지) 풀면 각 ESC_SECRET
+    if (role && role.secrets && SC.ESC_SECRET) role.secrets.forEach(function (p) {
+      if (!esc.solved[p.id]) return;
+      var a = (esc.attempts || {})[p.id] || {};
+      if (!a.hint && (a.tries || 0) <= 2) s.secret += SC.ESC_SECRET;
+    });
     if (esc.vaultCode) s.vault = SC.ESC_VAULT;
     if (esc.escapedAt) s.final = SC.ESC_FINAL;
     var helped = rooms.some(function (r, i) { return i !== esc.role && r.puzzles.every(function (p) { return esc.solved[p.id]; }); });
     if (helped) s.help = SC.ESC_HELP;
-    s.score = s.role + s.vault + s.final + s.help;
+    s.score = s.role + s.vault + s.final + s.help + s.secret;
     return s;
   }
 

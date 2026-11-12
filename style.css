@@ -491,3 +491,14 @@ details.rules ol{margin:.4rem 0 0;padding-left:1.3rem}
 #replayIntro{margin-left:.5rem}
 @media (max-width:600px){.intro-txt{font-size:1.15rem}.iv-art{width:3.6rem;height:3.6rem}.iv-room b{font-size:1.5rem}.iv-dark{font-size:3rem}}
 @media (prefers-reduced-motion:reduce){.intro-vis.in *{animation:none!important}.intro-stage{transition:none}}
+/* 🕵️ 비밀 진열장(2026-11-12): 진열장 줄 끝의 어두운 칸 + 열림 안내 / 컷신 점수판 장면 */
+.case-btn.secret{background:#2a2230;color:#f6e7c7;border-color:var(--brass);border-style:dashed}
+.case-btn.secret.done{background:#3d3346}
+.case-btn.secret.cur{box-shadow:0 0 0 3px var(--brass)}
+.secret-open{background:#2a2230;color:#f6e7c7;border:2px dashed var(--brass);border-radius:4px;padding:.5rem .8rem}
+.iv-score{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:center;font-family:var(--pixel)}
+.iv-score b{font-size:2rem;color:var(--brass)}
+.iv-sc{background:var(--page);color:var(--ink);border:3px solid var(--wood-light);padding:.7rem .9rem;font-size:1.1rem}
+.iv-sc.gold{background:var(--brass-wash);border-color:var(--brass);box-shadow:0 0 14px var(--brass)}
+.intro-vis.in .iv-sc{animation:ivRise .5s steps(5) both}
+.intro-vis.in .iv-sc:nth-child(3){animation-delay:.4s}.intro-vis.in .iv-sc:nth-child(5){animation-delay:.8s}

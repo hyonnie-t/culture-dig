@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261112a">
+<link rel="stylesheet" href="style.css?v=20261112b">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -83,6 +83,7 @@
         <li>팀 점수 = 팀원 점수의 <b>평균</b>. 그날 출석한 팀원 모두로 나누고, 안 낸 사람은 0점.</li>
         <li>평균으로 순위를 매겨 1위 40 · 2위 30 · 3위 20 · 4위 10 포인트. 평균이 같으면 같은 포인트.</li>
         <li>보너스: 팀원 전원 제출 +5(발굴·방탈출 각각) · 방탈출에서 전원 탈출 +5.</li>
+        <li><b>문화사 최종 합계</b> = 1차시 발굴 + 2차시 방탈출. 1차시 점수는 그대로 남아 있어 — 방탈출로 뒤집을 수 있어. <b>최종 합계가 나오면 선생님이 상품을 줘!</b></li>
       </ol>
     </details>
   </section>
@@ -174,7 +175,7 @@
       <h3>내 담당 전시실</h3>
       <div class="chips" id="rolePick"></div>
       <p class="muted" id="roleNote"></p>
-      <p class="muted">힌트를 보거나 틀리면 그 퍼즐은 1점(안 보고 한 번에 풀면 3점). 담당 방을 다 풀면 다른 방 하나를 도우러 갈 수 있어(+2).</p>
+      <p class="muted">힌트를 보거나 틀리면 그 퍼즐은 1점(안 보고 한 번에 풀면 3점). 담당 방을 다 풀면 🕵️ <b>비밀 진열장</b> 2개가 열리고(각 +1), 다른 방 하나를 도우러 갈 수 있어(+2). 최대 22점.</p>
       <button class="btn primary" id="startEscape" type="button">입장 · 시간 시작</button>
       <button class="btn ghost small" id="replayIntro" type="button">🎬 이야기 다시 보기</button>
     </div>
@@ -223,9 +224,9 @@
 <script src="focus_guard.js?v=20261110r"></script>
 <script src="draft_guard.js?v=20261110r"></script>
 <script src="glossary.js?v=20261110r"></script>
-<script src="data.js?v=20261112a"></script>
+<script src="data.js?v=20261112b"></script>
 <script src="pixels.js?v=20261110r"></script>
-<script src="logic.js?v=20261110r"></script>
-<script src="app.js?v=20261112b"></script>
+<script src="logic.js?v=20261112a"></script>
+<script src="app.js?v=20261112c"></script>
 </body>
 </html>
