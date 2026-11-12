@@ -1,0 +1,74 @@
+/* scene.css — 7판(2026-11-12) 장면형 방탈출 화면.
+ * 배색: «밤의 박물관» — 남색 어둠 + 등불 금빛. 배경 그림(달빛 드는 전시실)의 색을 그대로 따랐다.
+ *   발굴·수첩 화면의 나무·석재·황동(style.css)은 낮의 박물관이라 그대로 두고, 방 안에 들어갔을 때만 밤이 된다.
+ * 움직임: 손전등(손가락을 따라가는 빛), 등 켜질 때 어둠 걷힘 0.9초, 물건 떠오름 1.25초, 살펴볼 곳 반짝임 1.8초, 비밀 칸 맥박. prefers-reduced-motion이면 끈다. */
+.scene-scr{--night:#0c1224;--night2:#151d38;--gold:#e6b450;--gold-deep:#a87a1e}
+.sc-head{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;background:var(--night);color:#f6e7c7;border:3px solid #05070f;border-bottom:0;padding:.4rem .5rem}
+.sc-title{font-size:1.1rem;color:var(--gold);flex:1 1 auto;min-width:8rem}
+.sc-seal{font-family:var(--pixel);display:inline-flex;align-items:center;gap:.3rem}
+.sc-seal i{width:.85rem;height:.85rem;border:2px solid var(--gold-deep);border-radius:50%;display:inline-block}
+.sc-seal i.on{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.sc-keynum{color:#2a1f16;background:var(--gold);padding:0 .4rem;margin-left:.2rem}
+.sc-tools{display:flex;gap:.3rem;flex-wrap:wrap}
+
+.sc-stage-wrap{overflow-x:auto;background:#05070f;border:3px solid #05070f}
+.sc-stage{position:relative;aspect-ratio:1500/1008;width:min(100%,calc((100dvh - 19.5rem)*1.488));min-width:min(36rem,160vw);margin:0 auto;overflow:hidden;--lx:50%;--ly:60%;--gx:10%;--gy:35%;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
+.sc-stage img#scBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.sc-darkness{position:absolute;inset:0;pointer-events:none}
+.sc-stage.dark .sc-darkness{background:radial-gradient(circle at var(--lx) var(--ly),rgba(255,236,170,.10) 0,rgba(4,6,14,.22) 9%,rgba(3,5,12,.93) 19%,rgba(2,3,8,.97) 100%)}
+.sc-stage.lit .sc-darkness{background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,214,120,.30) 0,rgba(255,200,100,.08) 22%,transparent 45%),radial-gradient(ellipse at 50% 55%,transparent 55%,rgba(3,5,12,.42) 100%);animation:scDawn .9s ease both}
+@keyframes scDawn{from{background-color:rgba(2,3,8,.9)}to{background-color:transparent}}
+.sc-spots{position:absolute;inset:0}
+.sc-spot{position:absolute;background:transparent;border:0;padding:0;cursor:pointer;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.sc-spot:focus-visible{outline:3px solid var(--gold)}
+.sc-spot:active{background:rgba(230,180,80,.18)}
+.sc-stage.glint .sc-spot{box-shadow:0 0 0 2px rgba(230,180,80,.9),0 0 18px rgba(230,180,80,.7)}
+.sc-stage.dark.glint .sc-spot{box-shadow:0 0 0 1px rgba(230,180,80,.4)}
+.sc-spot.secret{box-shadow:0 0 0 2px rgba(190,150,255,.9),0 0 16px rgba(190,150,255,.8);animation:scPulse 1.2s ease-in-out infinite alternate}
+@keyframes scPulse{from{box-shadow:0 0 0 2px rgba(190,150,255,.5),0 0 6px rgba(190,150,255,.4)}to{box-shadow:0 0 0 3px rgba(190,150,255,1),0 0 22px rgba(190,150,255,.9)}}
+.sc-badge{position:absolute;right:-4px;top:-6px;min-width:1.5rem;height:1.5rem;border-radius:50%;background:var(--gold);color:#2a1f16;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;border:2px solid #2a1f16;pointer-events:none}
+.sc-badge.sec{background:#cdb4ff;left:-4px;right:auto}
+.sc-stage.dark .sc-badge{display:none}
+.sc-fx{position:absolute;inset:0;pointer-events:none}
+.sc-pop{position:absolute;width:16%;aspect-ratio:1;animation:scPop 1.25s ease both}
+.sc-pop img{width:100%;height:100%;object-fit:cover;border-radius:12px;border:3px solid var(--gold);box-shadow:0 0 24px rgba(230,180,80,.8)}
+@keyframes scPop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}25%{opacity:1;transform:translate(-50%,-60%) scale(1.05)}75%{opacity:1;transform:translate(-50%,-70%) scale(1)}100%{opacity:0;transform:translate(-50%,40%) scale(.4)}}
+
+.sc-say{position:absolute;left:1.5%;right:1.5%;top:1.5%;margin:0;background:rgba(8,12,28,.86);color:#f3e6c8;border:2px solid var(--gold-deep);border-radius:6px;padding:.4rem .7rem;min-height:2.6rem;font-size:1.02rem;line-height:1.45;pointer-events:none;z-index:3}
+.sc-say:empty{display:none}
+.sc-inv{display:flex;gap:.4rem;align-items:stretch;background:var(--night2);border:3px solid #05070f;border-top:0;padding:.45rem .5rem;overflow-x:auto}
+.sc-bag{font-size:1.5rem;align-self:center}
+.sc-slot{flex:0 0 auto;width:4.6rem;min-height:5.3rem;border:2px solid #2c375e;background:#0c1224;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.1rem;padding:.2rem;color:#f3e6c8;font-size:.82rem;line-height:1.15;text-align:center}
+button.sc-slot{cursor:pointer}
+.sc-slot.has{border-color:var(--gold-deep)}
+.sc-slot.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(230,180,80,.7);transform:translateY(-3px)}
+.it-img{width:3.4rem;height:3.4rem;object-fit:cover;border-radius:6px;display:block}
+
+.sc-modal{position:fixed;inset:0;z-index:60;background:rgba(3,5,12,.72);display:flex;align-items:center;justify-content:center;padding:.8rem}
+.sc-modal[hidden]{display:none}
+.sc-modal-in{background:var(--page);color:var(--ink);border:4px solid var(--gold-deep);box-shadow:0 0 0 3px #05070f,0 12px 40px rgba(0,0,0,.6);max-width:46rem;width:100%;max-height:calc(100dvh - 1.6rem);overflow:auto;padding:1rem 1.1rem;border-radius:4px;animation:pop .22s ease}
+.sc-modal-in.solved{box-shadow:0 0 0 3px #05070f,0 0 44px var(--gold)}
+.sc-modal-in h3{font-family:var(--pixel);font-size:1.2rem}
+.sc-q{font-size:1.08rem}
+.sc-lockline{color:var(--muted)}
+.sc-story{font-family:var(--book);font-size:1.1rem}
+.sc-code-big{font-family:var(--pixel);font-size:2.3rem;letter-spacing:.18em;text-align:center;background:#0f1a12;color:#8cff9a;border:3px solid #1b1d21;padding:.4rem;margin:.6rem 0}
+.sc-bench,.sc-bench-inv{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.6rem 0}
+.sc-bslot{width:5.4rem;min-height:5.6rem;border:2px dashed var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted)}
+.sc-bslot.on{border-style:solid;border-color:var(--brass);background:var(--brass-wash);color:var(--ink)}
+.sc-syms,.sc-symline,.sc-sympad{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.7rem 0}
+.sc-sym{position:relative;width:4.4rem;height:5rem;background:#0c1224;color:#e6b450;border:3px solid #a87a1e;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:2rem;line-height:1.1}
+.sc-sym small{position:absolute;left:5px;top:3px;font-size:.8rem;color:#f3e6c8}
+.sc-sym em,.sc-symbtn em{font-style:normal;font-size:.85rem;color:#f3e6c8}
+.sc-sym.small{width:3.2rem;height:3.4rem;font-size:1.6rem}
+.sc-symbtn{width:4.6rem;height:5rem;background:#151d38;color:#e6b450;border:3px solid #a87a1e;border-radius:50% 50% 12px 12px;font-size:2rem;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+.sc-symbtn:disabled{opacity:.35}
+
+/* 복도(평면도) 칸: 방 그림을 바탕에 깐다. 잠긴 방은 어둡게 */
+.room-tile.scene-tile{background:linear-gradient(rgba(251,247,238,.86),rgba(251,247,238,.93)),var(--tile-bg) center/cover}
+.room-tile.scene-tile.shut{background:linear-gradient(rgba(12,18,36,.80),rgba(12,18,36,.9)),var(--tile-bg) center/cover;color:#f3e6c8;opacity:1;filter:none}
+.room-tile.scene-tile.shut .r-sub{color:#c9c0aa}
+.floor-ask{background:var(--page);color:var(--ink);border:3px solid var(--brass);padding:.6rem .8rem;margin:.4rem}
+.floor-ask[hidden]{display:none}
+
+@media (prefers-reduced-motion:reduce){.sc-stage.lit .sc-darkness,.sc-spot.secret,.sc-pop,.sc-modal-in{animation:none}.sc-pop{display:none}}

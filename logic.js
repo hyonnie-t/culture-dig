@@ -260,7 +260,40 @@
   /* 서술형 글자 수(공백 제외) */
   function countChars(t) { return String(t || "").replace(/\s/g, "").length; }
 
+  /* ───── 7판(2026-11-12) 장면형 방탈출: 베낄 수 없게 학생·팀마다 달라지는 값들 ─────
+   * 학생 시드(학번): 문제 변형·숨긴 자리·작업대 번호. 팀 시드(반+팀): 엇갈린 무늬·열쇠 숫자. 모두 순수 함수. */
+  function warm(seedStr) { var r = seeded(seedStr); r(); r(); r(); return r; } // 첫 몇 값은 비슷한 시드끼리 쏠려서 버린다(테스트가 잡았다)
+  function pickVariant(p, alts, seedStr) { // 같은 자물쇠(id)에 학생마다 다른 문제. id·type·secret은 원래 것 그대로(점수·저장 키가 안 바뀐다)
+    var list = [p].concat(alts || []);
+    var k = Math.floor(warm("var:" + seedStr + ":" + p.id)() * list.length);
+    if (k <= 0 || !list[k]) return p;
+    var v = {}; Object.keys(list[k]).forEach(function (key) { v[key] = list[k][key]; });
+    v.id = p.id; v.type = p.type; if (p.secret) v.secret = true;
+    return v;
+  }
+  function hideLayout(seedStr, spots, things) { // 숨긴 자리: {자리: 물건}. 자리 수 = 물건 수
+    var sh = shuffle(things, warm("hide:" + seedStr));
+    var out = {}; spots.forEach(function (s, i) { out[s] = sh[i]; });
+    return out;
+  }
+  function comboCode(seedStr) { // 작업대에서 드러나는 세 자리 번호(1~9만, 0은 «안 눌린 것»과 헷갈려서 뺌)
+    var r = warm("combo:" + seedStr), s = "";
+    for (var i = 0; i < 3; i++) s += String(1 + Math.floor(r() * 9));
+    return s;
+  }
+  function crossSymbols(teamSeed, roomId, nSym, len) { // 금고 무늬 순서(무늬 인덱스 배열, 겹치지 않음)
+    var ids = []; for (var i = 0; i < (nSym || 6); i++) ids.push(i);
+    return shuffle(ids, warm("cross:" + teamSeed + ":" + roomId)).slice(0, len || 4);
+  }
+  function crossSource(i, n) { return (i + 1) % n; } // i번 방 금고의 무늬는 다음 방 벽 그림 뒤에 있다
+  function teamKey(teamSeed, roomId) { return String(1 + Math.floor(warm("key:" + teamSeed + ":" + roomId)() * 9)); }
+  function vaultCode2(teamSeed, rooms, order) {
+    var list = order ? order.map(function (i) { return rooms[i]; }) : rooms;
+    return list.map(function (r) { return teamKey(teamSeed, r.id); }).join("");
+  }
+
   root.Logic = {
+    pickVariant: pickVariant, hideLayout: hideLayout, comboCode: comboCode, crossSymbols: crossSymbols, crossSource: crossSource, teamKey: teamKey, vaultCode2: vaultCode2,
     seeded: seeded, shuffle: shuffle, layersFor: layersFor, roomsFor: roomsFor, artifactsOf: artifactsOf,
     blockLayout: blockLayout, nameChoices: nameChoices, quizRanking: quizRanking, parseNumbers: parseNumbers, drawTeams: drawTeams,
     rankPoints: rankPoints, teamResults: teamResults, vaultOrder: vaultOrder, escScore: escScore,

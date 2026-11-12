@@ -15,7 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261112b">
+<link rel="stylesheet" href="style.css?v=20261112s">
+<link rel="stylesheet" href="scene.css?v=20261112s">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden>미리보기 모드 — 저장되지 않아. 활동을 다 안 해도 넘어갈 수 있어.</div>
@@ -169,13 +170,13 @@
     <div class="card placard">
       <p class="first-line pixel" id="escFirstLine">📱 내 태블릿으로 «담당 전시실» 하나를 맡는다</p>
       <h2>🏛️ 박물관 방탈출 — 입장</h2>
-      <p>문이 잠겼다. 전시실마다 퍼즐 4개를 풀면 <b>열쇠 숫자</b>가 나온다. 내 태블릿에서는 <b>내 담당 방만</b> 열려. 다른 방 숫자는 그 방을 맡은 팀원에게 물어 모으고, <b>우리 팀 순서</b>대로 넣으면 수장고 문이 열린다.</p>
+      <p>문이 잠겼다. 불 꺼진 전시실을 뒤져 물건을 찾고, 조합하고, 자물쇠 4개를 풀면 금고에서 <b>열쇠 숫자</b>가 나온다. 내 태블릿에서는 <b>내 담당 방만</b> 열려. 금고를 여는 무늬는 <b>다른 방 벽 그림 뒤</b>에 있으니 팀원에게 물어야 해. 열쇠 숫자를 <b>우리 팀 순서</b>대로 모아 넣으면 수장고 문이 열린다.</p>
       <p id="escTeam"></p>
       <div class="last-review" id="escReview" hidden></div>
       <h3>내 담당 전시실</h3>
       <div class="chips" id="rolePick"></div>
       <p class="muted" id="roleNote"></p>
-      <p class="muted">힌트를 보거나 틀리면 그 퍼즐은 1점(안 보고 한 번에 풀면 3점). 담당 방을 다 풀면 🕵️ <b>비밀 진열장</b> 2개가 열리고(각 +1), 다른 방 하나를 도우러 갈 수 있어(+2). 최대 22점.</p>
+      <p class="muted">힌트를 보거나 틀리면 그 자물쇠는 1점(안 보고 한 번에 풀면 3점). 담당 방 금고를 열면 🕵️ <b>비밀 칸</b> 2곳이 열리고(각 +1), 다른 방을 도와 끝내면 +2. 최대 22점. 문제와 물건 자리, 번호는 사람마다·팀마다 달라.</p>
       <button class="btn primary" id="startEscape" type="button">입장 · 시간 시작</button>
       <button class="btn ghost small" id="replayIntro" type="button">🎬 이야기 다시 보기</button>
     </div>
@@ -191,6 +192,31 @@
   <section id="scrPuzzle" class="scr" hidden>
     <div class="shelf" id="roomShelf"></div>
     <div class="card placard" id="puzzleCard"></div>
+  </section>
+
+  <!-- 전시실 안(7판): 방 그림 + 누를 자리 + 가방 -->
+  <section id="scrScene" class="scr scene-scr" hidden>
+    <div class="sc-head">
+      <button type="button" class="btn small" id="scBack">← 복도</button>
+      <span class="sc-title pixel" id="scTitle"></span>
+      <span class="sc-seal" id="scSeal"></span>
+      <span class="sc-tools">
+        <button type="button" class="btn small" id="scGlint">🔍 살펴볼 곳</button>
+        <button type="button" class="btn small" id="scSound" aria-label="소리 켜고 끄기">🔇</button>
+        <button type="button" class="btn ghost small" id="scSkip" hidden>미리보기: 이 방 끝내기</button>
+      </span>
+    </div>
+    <div class="sc-stage-wrap">
+      <div class="sc-stage dark" id="scStage">
+        <img id="scBg" alt="밤의 전시실" draggable="false">
+        <div class="sc-darkness" aria-hidden="true"></div>
+        <div class="sc-spots" id="scSpots"></div>
+        <div class="sc-fx" id="scFx" aria-hidden="true"></div>
+        <p class="sc-say" id="scSay" aria-live="polite"></p>
+        <div class="sc-modal" id="scModal" hidden><div class="sc-modal-in" id="scModalIn"></div></div>
+      </div>
+    </div>
+    <div class="sc-inv" id="scInv" aria-label="가방"></div>
   </section>
 
   <!-- 수장고 문 -->
@@ -225,8 +251,11 @@
 <script src="draft_guard.js?v=20261110r"></script>
 <script src="glossary.js?v=20261110r"></script>
 <script src="data.js?v=20261112b"></script>
+<script src="variants.js?v=20261112s"></script>
+<script src="scenes.js?v=20261112s"></script>
 <script src="pixels.js?v=20261110r"></script>
-<script src="logic.js?v=20261112a"></script>
-<script src="app.js?v=20261112c"></script>
+<script src="logic.js?v=20261112s"></script>
+<script src="scene.js?v=20261112s"></script>
+<script src="app.js?v=20261112s"></script>
 </body>
 </html>
