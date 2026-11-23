@@ -228,6 +228,8 @@ const Scene = (function () {
     const m = $("scModal"); $("scModalIn").className = "sc-modal-in " + (cls || ""); $("scModalIn").innerHTML = html; m.hidden = false;
     const x = $("scModalIn").querySelector("[data-close]"); if (x) x.addEventListener("click", closeModal);
   }
+  /* 폰에서는 문제 창이 길어 확인 단추 아래 오답 글이 화면 밖일 수 있다 — 글을 넣은 뒤 그 줄이 보이게 창 안에서만 스크롤(2026-11-23) */
+  function showErr(id, msg) { const el = $(id); if (!el) return; el.textContent = msg; try { el.scrollIntoView({ block: "nearest", behavior: "instant" }); } catch (e) { /* 옛 브라우저 */ } }
   function closeModal() { const m = $("scModal"); if (m) m.hidden = true; cur = null; }
   const closeBtn = '<button type="button" class="btn" data-close>닫기</button>';
 
@@ -264,7 +266,7 @@ const Scene = (function () {
     const go = () => {
       const v = $("scCodeIn").value.trim();
       if (v === comboOf(r) || (skip() && !v)) { s.crate = true; save(); sfx("open"); draw(); closeModal(); say("번호가 맞았다. " + c.names.crate + josa(c.names.crate, "이", "가") + " 열렸다."); onSpot("crate"); }
-      else { sfx("bad"); $("scCodeErr").textContent = s.combo ? "번호가 틀렸어. " + c.names[c.station] + "에서 나온 번호를 다시 봐." : "번호가 틀렸어. 이 번호는 방 안 어딘가에서 직접 만들어 내야 해."; shake(); }
+      else { sfx("bad"); showErr("scCodeErr", s.combo ? "번호가 틀렸어. " + c.names[c.station] + "에서 나온 번호를 다시 봐." : "번호가 틀렸어. 이 번호는 방 안 어딘가에서 직접 만들어 내야 해."); shake(); }
     };
     $("scCodeBtn").addEventListener("click", go);
     $("scCodeIn").addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
@@ -296,7 +298,7 @@ const Scene = (function () {
         got.push(Number(b.dataset.k)); sfx("tap");
         if (got.length < 4) { paint(); return; }
         if (got.join() === want.join()) pass();
-        else { sfx("bad"); got = []; paint(); $("scSymErr").textContent = "무늬판이 덜컥, 제자리로 돌아갔다. 순서를 다시 확인해 봐."; shake(); }
+        else { sfx("bad"); got = []; paint(); showErr("scSymErr", "무늬판이 덜컥, 제자리로 돌아갔다. 순서를 다시 확인해 봐."); shake(); }
       }));
       $("scSymReset").addEventListener("click", () => { got = []; paint(); });
       const sk = $("scSymSkip"); if (sk) sk.addEventListener("click", pass);
@@ -359,8 +361,8 @@ const Scene = (function () {
     };
     const miss = (msg) => {
       sfx("bad"); save();
-      if (needsReveal(p, a) && !card.querySelector(".reveal-box")) { drawPuzzle(); $("puzErr").textContent = msg; return; }
-      $("puzErr").textContent = msg + (a.tries === 1 ? " 📖 " + p.page + "을 다시 봐." : "");
+      if (needsReveal(p, a) && !card.querySelector(".reveal-box")) { drawPuzzle(); showErr("puzErr", msg); return; }
+      showErr("puzErr", msg + (a.tries === 1 ? " 📖 " + p.page + "을 다시 봐." : ""));
       shake(); renderTop();
     };
     $("hintBtn").addEventListener("click", () => { if (!a.hint) { a.hint = true; S.esc.hints++; save(); } $("puzHint").hidden = false; renderTop(); });
@@ -368,13 +370,13 @@ const Scene = (function () {
     if (p.type === "match") {
       card.querySelectorAll(".m-left").forEach((b) => b.addEventListener("click", () => { a.selLeft = Number(b.dataset.i); card.querySelectorAll(".m-left").forEach((x) => x.classList.remove("sel")); b.classList.add("sel"); }));
       card.querySelectorAll(".m-right").forEach((b) => b.addEventListener("click", () => {
-        if (a.selLeft == null) { $("puzErr").textContent = "먼저 왼쪽을 눌러."; return; }
+        if (a.selLeft == null) { showErr("puzErr", "먼저 왼쪽을 눌러."); return; }
         const ri = Number(b.dataset.ri);
         Object.keys(a.map).forEach((k) => { if (a.map[k] === ri) delete a.map[k]; });
         a.map[a.selLeft] = ri; a.selLeft = null; save(); drawPuzzle();
       }));
       $("checkBtn").addEventListener("click", () => {
-        if (Object.keys(a.map).length < p.pairs.length) { $("puzErr").textContent = "네 쌍을 다 지어 줘."; return; }
+        if (Object.keys(a.map).length < p.pairs.length) { showErr("puzErr", "네 쌍을 다 지어 줘."); return; }
         if (locked) return;
         const res = Logic.checkMatch(p, a.map); a.tries++;
         if (res.correct) win(); else miss(res.ok + "/" + res.total + " 맞음. 짝을 바꿔 다시 해 봐.");
