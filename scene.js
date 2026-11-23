@@ -232,6 +232,7 @@ const Scene = (function () {
   /* 폰에서는 문제 창이 길어 확인 단추 아래 오답 글이 화면 밖일 수 있다 — 글을 넣은 뒤 그 줄이 보이게 창 안에서만 스크롤(2026-11-23) */
   function showErr(id, msg) { const el = $(id); if (!el) return; el.textContent = msg; try { el.scrollIntoView({ block: "nearest", behavior: "instant" }); } catch (e) { /* 옛 브라우저 */ } }
   function closeModal() { const m = $("scModal"); if (m) m.hidden = true; cur = null; }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("scModal") && !$("scModal").hidden) closeModal(); }); // ✕·닫기와 같게 Esc로도
   const closeBtn = '<button type="button" class="btn" data-close>닫기</button>';
 
   /* 작업대: 재료 3개를 올리고 조합 → 세 자리 번호 */
@@ -366,7 +367,11 @@ const Scene = (function () {
     };
     const miss = (msg) => {
       sfx("bad"); save();
-      if (needsReveal(p, a) && !card.querySelector(".reveal-box")) { drawPuzzle(); showErr("puzErr", msg); return; }
+      if (needsReveal(p, a) && !card.querySelector(".reveal-box")) { // 정답 상자가 열린다 — 폰에서는 긴 문제 아래라 화면 밖일 수 있어 상자로 옮긴다(2026-11-23 검토)
+        drawPuzzle(); showErr("puzErr", msg);
+        const rb = $("scModalIn").querySelector(".reveal-box"); if (rb) try { rb.scrollIntoView({ block: "center", behavior: "instant" }); } catch (e) { /* 옛 브라우저 */ }
+        return;
+      }
       showErr("puzErr", msg + (a.tries === 1 ? " 📖 " + p.page + "을 다시 봐." : ""));
       shake(); renderTop();
     };
