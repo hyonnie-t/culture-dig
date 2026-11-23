@@ -685,6 +685,7 @@ function renderEscapeEntry() {
   $("escFirstLine").textContent = S.solo ? "🧑 개인용(?solo=1) — 모든 전시실이 열려 있어" : "📱 내 태블릿으로 «담당 전시실» 하나를 맡는다";
   $("escTeam").innerHTML = S.solo ? "개인용: 기록 이름은 <b>" + esc(Logic.soloCode(S.sid)) + "</b>" :
     (tm ? '우리 팀: <b>' + esc(teamTitle(tm)) + '</b> <button type="button" class="btn ghost small" id="escTeamChange">팀 바꾸기</button><div id="escTeamPick" hidden></div>' : '<span class="err">첫 화면에서 팀을 먼저 골라 줘.</span>');
+  const rules = $("escRules"); if (rules && !rules.dataset.init) { rules.dataset.init = "1"; rules.open = !narrowScreen(); } // 규칙 칸: 폰은 접어서 시작
   const tc = $("escTeamChange"); if (tc) tc.addEventListener("click", () => { const p = $("escTeamPick"); p.hidden = !p.hidden; if (!p.hidden) renderTeamPick(p, renderEscapeEntry); });
   renderEscReview();
   const rooms = roomsNow();
@@ -726,11 +727,16 @@ function renderEscReview() {
     h.push('</ul>');
     if (missAll.length > REVIEW_MAX) h.push('<p class="muted lr-more">나머지 ' + (missAll.length - REVIEW_MAX) + '개는 «1차시 · 유물 발굴 (수첩 보기)»의 마지막 쪽에 있어.</p>');
   }
-  box.innerHTML = h.join("");
+  // 접는 칸으로(2026-11-23 효니 «폰은 화면이 작다»): 폰에서는 접어서 시작, 태블릿·PC는 펼쳐서. 담당 방을 고를 때 다시 그려도 열고 닫은 상태는 그대로 둔다.
+  const prev = box.querySelector("details.lr-det");
+  const open = prev ? prev.open : !narrowScreen();
+  box.innerHTML = '<details class="lr-det"' + (open ? " open" : "") + '><summary>' + h[0].replace(/^<p class="lr-head">/, '<span class="lr-head">').replace(/<\/p>$/, "</span>") + '</summary>' + h.slice(1).join("") + '</details>';
   box.hidden = false;
   box.querySelectorAll(".lr-img").forEach((el) => bindZoom(el, artById(el.dataset.id)));
   reveal(box);
 }
+/* 폰 폭(700px 이하) — 접는 칸을 처음에 접어 둘지 정할 때만 쓴다(scene.css 폰 구간과 같은 기준) */
+function narrowScreen() { return !!(window.matchMedia && window.matchMedia("(max-width:700px)").matches); }
 /* 시작 이야기(컷신, 2026-11-12 효니 «게임 스토리 몰입감»): 방탈출에 처음 들어올 때 한 번 보여 준다(S.esc.introSeen).
  * 장면 6개, 탭·«다음»으로 넘김, 글자는 한 글자씩(탭하면 바로 다 보임). 마지막 장면이 «숫자를 건넬 때 그 방 유물을 설명» 규칙 —
  * 정보 교환을 서로 가르치기로 바꾸는 학습 장치다(점수와는 상관없음). 입장 화면 «🎬 이야기 다시 보기»로 다시 볼 수 있다(칠판에 띄울 때). */

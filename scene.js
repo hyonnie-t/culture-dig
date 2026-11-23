@@ -106,7 +106,7 @@ const Scene = (function () {
         (bd ? '<span class="sc-badge">' + bd + '</span>' : "") + (glow ? '<span class="sc-badge sec">🕵️</span>' : "") + '</button>';
     }).join("");
     $("scSpots").querySelectorAll(".sc-spot").forEach((b) => b.addEventListener("click", (e) => { moveLight(e); onSpot(b.dataset.s, b); }));
-    $("scSeal").innerHTML = "봉인 " + [0, 1, 2].map((k) => '<i class="' + (solved(r.puzzles[k]) ? "on" : "") + '"></i>').join("") + (solved(r.puzzles[3]) ? ' <b class="sc-keynum">🔑 ' + keyOf(r) + '</b>' : "");
+    $("scSeal").innerHTML = '<span class="sc-lbl">봉인 </span>' +[0, 1, 2].map((k) => '<i class="' + (solved(r.puzzles[k]) ? "on" : "") + '"></i>').join("") + (solved(r.puzzles[3]) ? ' <b class="sc-keynum">🔑 ' + keyOf(r) + '</b>' : "");
     $("scSound").textContent = soundOn() ? "🔊" : "🔇";
     $("scSkip").hidden = !skip();
     drawInv();
@@ -225,8 +225,9 @@ const Scene = (function () {
 
   /* ── 모달 ── */
   function modal(html, cls) {
-    const m = $("scModal"); $("scModalIn").className = "sc-modal-in " + (cls || ""); $("scModalIn").innerHTML = html; m.hidden = false;
-    const x = $("scModalIn").querySelector("[data-close]"); if (x) x.addEventListener("click", closeModal);
+    // ✕(오른쪽 위, 창 안에서 스크롤해도 따라옴): 폰에서 긴 문제 창 맨 아래 «닫기»까지 내려가지 않아도 닫게(2026-11-23 효니 «화면이 작다»)
+    const m = $("scModal"); $("scModalIn").className = "sc-modal-in " + (cls || ""); $("scModalIn").innerHTML = '<button type="button" class="sc-x" data-close aria-label="닫기">✕</button>' + html; m.hidden = false;
+    $("scModalIn").querySelectorAll("[data-close]").forEach((x) => x.addEventListener("click", closeModal));
   }
   /* 폰에서는 문제 창이 길어 확인 단추 아래 오답 글이 화면 밖일 수 있다 — 글을 넣은 뒤 그 줄이 보이게 창 안에서만 스크롤(2026-11-23) */
   function showErr(id, msg) { const el = $(id); if (!el) return; el.textContent = msg; try { el.scrollIntoView({ block: "nearest", behavior: "instant" }); } catch (e) { /* 옛 브라우저 */ } }
@@ -345,7 +346,11 @@ const Scene = (function () {
     } else if (p.type === "key") {
       h.push('<p><input id="keyIn" class="key-input" inputmode="numeric" maxlength="' + String(p.answer).length + '" style="width:' + (String(p.answer).length * 1.1 + 1.6) + 'em" autocomplete="off" aria-label="숫자"></p><button type="button" class="btn primary" id="checkBtn">확인</button>');
     }
-    h.push('<p class="err" id="puzErr"></p>');
+    // 확인 단추 + 오답 글을 한 줄(.puz-act)로 묶는다 — 폰에서는 창 아래에 붙어 있어(sticky) 긴 문제를 보면서도 늘 보인다(2026-11-23)
+    const CHECK = '<button type="button" class="btn primary" id="checkBtn">확인</button>';
+    const hasCheck = h[h.length - 1].endsWith(CHECK);
+    if (hasCheck) h[h.length - 1] = h[h.length - 1].slice(0, -CHECK.length);
+    h.push('<div class="puz-act' + (hasCheck ? "" : " no-btn") + '">' + (hasCheck ? CHECK : "") + '<p class="err" id="puzErr" aria-live="polite"></p></div>');
     h.push(revealBox(p, a, null, isRole));
     h.push('<button type="button" class="btn ghost small" id="hintBtn">💡 힌트 보기' + (isRole ? " (이 자물쇠는 1점이 돼)" : p.secret ? " (이 비밀 칸은 0점이 돼)" : "") + '</button><p class="hint-box" id="puzHint"' + (a.hint ? "" : " hidden") + '>' + esc(p.hint) + '</p>');
     if (skip()) h.push('<button type="button" class="btn ghost small" id="skipPuz">미리보기: 해결 처리</button>');
