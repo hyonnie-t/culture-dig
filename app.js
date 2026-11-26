@@ -511,7 +511,7 @@ function renderNote() {
   const prev = S.dig.pick && picks.some((r) => r.name === S.dig.pick) ? S.dig.pick : "";
   if (prev || firstReview) $("writePick").value = prev || firstReview.name;
   renderRefCard($("writePick").value);
-  if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; renderClassMuseum("cmNote"); }
+  if (S.dig.submitted) { $("submitDig").disabled = true; $("submitDig").textContent = "제출 완료"; $("fixBtn").hidden = false; $("noteMsg").textContent = "제출했어. 선생님 화면에 들어갔어."; renderClassMuseum("cmNote"); }
   book.scrollLeft = 0;
   updatePageNum();
   syncPadlet();
@@ -594,6 +594,18 @@ async function copyOut() {
   $("noteMsg").textContent = ok ? "복사했어. 패들렛에 붙여 넣어 줘." : "복사가 안 됐어. 한 번 더 눌러 줘.";
 }
 
+/* 2026-11-26 고쳐서 다시 내기(효니 쪽지: 낸 학생이 다시 낼 길이 없었다). 발굴 노트만 푼다(성향 테스트·방탈출 제출은 그대로).
+ * 기기 저장의 S.dig.submitted를 false로 저장해 새로고침해도 일관되게 하고, 쓴 글은 화면에 그대로 둔다.
+ * 다시 제출하면 백엔드가 새 행을 최신 기록으로 본다. */
+function unlockForFix() {
+  if (S.sending || !S.dig || !S.dig.submitted) return;
+  S.dig.submitted = false; S.digAgain = true; save();
+  $("fixBtn").hidden = true;
+  $("submitDig").disabled = false;
+  $("submitDig").textContent = "다시 제출하고 복사하기";
+  $("noteMsg").textContent = "고친 뒤 «다시 제출하고 복사하기»를 눌러 줘. 새로 낸 글이 앞의 것을 대신해.";
+  syncPadlet();
+}
 async function submitDig() {
   if (S.sending || (S.dig && S.dig.submitted)) return;
   const text = $("writeText").value.trim();
@@ -621,7 +633,7 @@ async function submitDig() {
     await postToSheet(payload);
   } catch (e) {
     $("noteErr").textContent = e.locked ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘.";
-    S.sending = false; $("submitDig").disabled = false; $("submitDig").textContent = "제출하고 복사하기";
+    S.sending = false; $("submitDig").disabled = false; $("submitDig").textContent = S.digAgain ? "다시 제출하고 복사하기" : "제출하고 복사하기";
     return;
   }
   const copied = await copyP;
@@ -629,6 +641,7 @@ async function submitDig() {
   S.outText = out; // 메모리에만 둔다(공용 태블릿에 글을 남기지 않는다)
   if (window.DraftGuard) DraftGuard.clear(); // 저장 성공 → 임시저장 삭제
   $("submitDig").textContent = "제출 완료";
+  $("fixBtn").hidden = false;
   $("noteMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : "제출했어! 내 점수 " + sc.score + "점이 팀 평균에 들어가. " + (copied ? "글도 복사했어. 패들렛에 붙여 넣어 줘." : "복사가 안 됐으니 «다시 복사»를 눌러 줘.");
   syncPadlet();
   renderClassMuseum("cmNote", true);
@@ -1211,6 +1224,7 @@ function init() {
   $("introStage").addEventListener("click", (e) => { if (!e.target.closest("button")) introNext(); }); // 화면 아무 데나 탭해도 넘어간다
   $("replayIntro").addEventListener("click", () => { if (S.esc) S.esc.introSeen = false; playIntro(); });
   $("submitDig").addEventListener("click", submitDig);
+  $("fixBtn").addEventListener("click", unlockForFix);
   $("copyBtn").addEventListener("click", copyOut);
   $("submitEscape").addEventListener("click", submitEscape);
   $("hintToggle").addEventListener("click", () => { $("hintBox").hidden = !$("hintBox").hidden; });
